@@ -4,7 +4,6 @@ import java.util.List;
 
 public class Ticketek implements ITicketek {
 
-	@Override
 	public void registrarSede(String nombre, String direccion, int capacidadMaxima) {
 		// TODO Auto-generated method stub
 
