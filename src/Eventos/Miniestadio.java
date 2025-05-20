@@ -11,4 +11,13 @@ class Miniestadio extends Teatro {
     double obtenerPrecioBase(Funcion funcion, String sector) {
         return super.obtenerPrecioBase(funcion, sector) + costoAdicional;
     }
+    
+    @Override
+    public String toString() {
+        return "Miniestadio: " + nombre +
+               " | Dirección: " + direccion +
+               " | Capacidad: " + capacidadTotal +
+               " | Costo adicional: $" + costoAdicional;
+    }
+
 }

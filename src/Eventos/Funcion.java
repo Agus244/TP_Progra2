@@ -12,8 +12,10 @@ class Funcion {
         this.sede = sede;
         this.espectaculo = espectaculo;
     }
-
+    
+    @Override
     public String toString() {
-        return "(" + fecha + ") " + sede.nombre;
+        return "(" + fecha + ") " + sede.nombre + " - " + espectaculo.nombre;
     }
+
 }

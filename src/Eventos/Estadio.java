@@ -8,4 +8,10 @@ class Estadio extends Sede {
     double obtenerPrecioBase(Funcion funcion, String sector) {
         return funcion.precioBase;
     }
+    
+    @Override
+    public String toString() {
+        return "Estadio: " + nombre + " | Dirección: " + direccion + " | Capacidad: " + capacidadTotal;
+    }
+
 }

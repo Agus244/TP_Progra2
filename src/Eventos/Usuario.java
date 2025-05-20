@@ -17,5 +17,12 @@ public class Usuario {
 	    boolean validarContrasena(String input) {
 	        return contrasena.equals(input);
 	    }
+	    
+	    @Override
+	    public String toString() {
+	        return "Usuario: " + nombre + " " + apellido +
+	               " | Email: " + email +
+	               " | Entradas: " + entradas.size();
+	    }
 }
 	

@@ -18,19 +18,43 @@ class Entrada implements IEntrada {
         this.anulada = false;
         this.fueUsada = false;
     }
-
+    
+    @Override
     public double precio() {
         return funcion.sede.obtenerPrecioBase(funcion, sector);
-    }
-
-    public String toString() {
-        return "- " + funcion.toString() + " - " + sector.toUpperCase() + " - " + tipo.toUpperCase();
     }
 
 	@Override
 	public String ubicacion() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public String toString() {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("- ")
+	      .append(funcion.fecha)
+	      .append(" - ")
+	      .append(funcion.espectaculo.nombre)
+	      .append(" - ")
+	      .append(funcion.sede.nombre)
+	      .append(" - ");
+
+	    if (tipo.equalsIgnoreCase("CAMPO")) {
+	        sb.append("CAMPO");
+	    } else {
+	        sb.append(sector.toUpperCase());
+	        if (asientos != null && asientos.length > 0) {
+	            sb.append(" - Asientos: ");
+	            for (int i = 0; i < asientos.length; i++) {
+	                sb.append(asientos[i]);
+	                if (i < asientos.length - 1) sb.append(", ");
+	            }
+	        }
+	    }
+
+	    return sb.toString();
 	}
 
 	}

@@ -25,5 +25,18 @@ class Espectaculo {
     Funcion getFuncion(String fecha) {
         return funciones.get(fecha);
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Espectáculo: ").append(nombre).append("\nFunciones:\n");
+
+        for (Funcion f : getFunciones()) {
+            sb.append("  - ").append(f.fecha).append(" en ").append(f.sede.nombre).append("\n");
+        }
+
+        return sb.toString();
+    }
+
 }
 

@@ -21,4 +21,20 @@ class Teatro extends Sede {
         }
         throw new RuntimeException("Sector no encontrado");
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Teatro: ").append(nombre)
+          .append(" | Dirección: ").append(direccion)
+          .append(" | Capacidad: ").append(capacidadTotal)
+          .append(" | Asientos por fila: ").append(asientosPorFila)
+          .append(" | Sectores: ");
+        for (int i = 0; i < sectores.length; i++) {
+            sb.append(sectores[i]);
+            if (i < sectores.length - 1) sb.append(", ");
+        }
+        return sb.toString();
+    }
+
 }
