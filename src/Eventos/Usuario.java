@@ -24,5 +24,10 @@ public class Usuario {
 	               " | Email: " + email +
 	               " | Entradas: " + entradas.size();
 	    }
+
+		public void agregarEntrada(Entrada entrada) {
+			// TODO Auto-generated method stub
+			
+		}
 }
 	
