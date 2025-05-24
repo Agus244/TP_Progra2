@@ -26,8 +26,21 @@ class Entrada implements IEntrada {
 
 	@Override
 	public String ubicacion() {
-		// TODO Auto-generated method stub
-		return null;
+		 if (tipo.equalsIgnoreCase("CAMPO")) {
+	            return "CAMPO";
+	        } else {
+	            StringBuilder sb = new StringBuilder();
+	            sb.append(sector.toUpperCase());
+	            if (asientos != null && asientos.length > 0) {
+	                sb.append(" - Asientos: ");
+	                for (int i = 0; i < asientos.length; i++) {
+	                    sb.append(asientos[i]);
+	                    if (i < asientos.length - 1) sb.append(", ");
+	                }
+	            }
+	            return sb.toString();
+	        }
+	
 	}
 	
 	@Override
@@ -56,5 +69,44 @@ class Entrada implements IEntrada {
 
 	    return sb.toString();
 	}
+	public Funcion getFuncion() {
+        return funcion;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getSector() {
+        return sector;
+    }
+
+    public int[] getAsientos() {
+        return asientos;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public boolean estaAnulada() {
+        return anulada;
+    }
+
+    public boolean fueUsada() {
+        return fueUsada;
+    }
+    public void setAnulada(boolean anulada) {
+        this.anulada = anulada;
+    }
+
+    public void setFueUsada(boolean fueUsada) {
+        this.fueUsada = fueUsada;
+    }
+    
+
+    
+    
+
 
 	}
