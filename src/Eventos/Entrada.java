@@ -103,6 +103,7 @@ class Entrada implements IEntrada {
     public void setFueUsada(boolean fueUsada) {
         this.fueUsada = fueUsada;
     }
+
     
 
     

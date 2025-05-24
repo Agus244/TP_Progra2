@@ -37,4 +37,30 @@ class Teatro extends Sede {
         return sb.toString();
     }
 
+	@Override
+	protected String getNombre() {
+		return nombre;
+	}
+
+	@Override
+	protected int getCapacidadTotal() {
+		return capacidadTotal;
+	}
+
+	@Override
+	protected int getAsientosPorFila() {
+		return asientosPorFila;
+	}
+
+	@Override
+	protected String getDireccion() {
+		return direccion;
+	}
+
+	@Override
+	protected Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int asiento) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

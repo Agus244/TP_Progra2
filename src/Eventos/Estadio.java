@@ -14,4 +14,34 @@ class Estadio extends Sede {
         return "Estadio: " + nombre + " | Dirección: " + direccion + " | Capacidad: " + capacidadTotal;
     }
 
+	@Override
+	protected String getNombre() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected int getCapacidadTotal() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	protected int getAsientosPorFila() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	protected String getDireccion() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int asiento) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
