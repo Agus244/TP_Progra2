@@ -416,13 +416,14 @@ public class Ticketek implements ITicketek {
 	    }
 	    return total;
 	}
+	
 	@Override
 	public double totalRecaudadoPorSede(String nombreEspectaculo, String nombreSede) {
 	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
 	    if (nombreSede == null || nombreSede.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido");
 
 	    Map<String, Double> recaudacionEspectaculos = recaudacionPorSedeYEspectaculo.get(nombreSede);
-	    if (recaudacionEspectaculos == null) return 0.0; // La sede no ha recaudado nada
+	    if (recaudacionEspectaculos == null) return 0.0; 
 
 	    return recaudacionEspectaculos.getOrDefault(nombreEspectaculo, 0.0);
 	}
