@@ -9,6 +9,8 @@ abstract class Sede {
         this.direccion = direccion;
         this.capacidadTotal = capacidadTotal;
     }
+    
+    
 
     abstract double obtenerPrecioBase(Funcion funcion, String sector);
 }

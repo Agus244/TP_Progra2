@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Usuario {
-	 String email, nombre, apellido, contrasena;
+	 	String email, nombre, apellido, contrasena;
 	    List<IEntrada> entradas = new ArrayList<>();
 
 	    Usuario(String email, String nombre, String apellido, String contrasena) {
