@@ -38,11 +38,7 @@ public class Estadio extends Sede {
             marcarAsientoOcupado(funcion, CAMPO_SECTOR_NAME, dummySeatNumber);
         }
 
-        // Calculate the total cost of the ticket (for one ticket)
-        double costoTotalUnitario = obtenerPrecioBase(funcion, CAMPO_SECTOR_NAME);
-        
-      
-        return new Entrada(funcion, usuario.getEmail(), costoTotalUnitario, CAMPO_SECTOR_NAME, 1);
+        return new Entrada(funcion, usuario, CAMPO_SECTOR_NAME, 1);
     }
     
    

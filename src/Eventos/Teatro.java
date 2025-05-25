@@ -89,11 +89,8 @@ public class Teatro extends Sede {
         // Mark the seat as occupied
         marcarAsientoOcupado(funcion, sector, asiento);
 
-        // Calculate the total cost of the ticket
-        double costoTotal = obtenerPrecioBase(funcion, sector);
-
         // Create and return the ticket
-        return new Entrada(funcion, usuario.getEmail(), costoTotal, sector, asiento);
+        return new Entrada(funcion, usuario, sector, asiento);
     }
 
     @Override
