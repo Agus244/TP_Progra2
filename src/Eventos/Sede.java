@@ -9,12 +9,8 @@ abstract class Sede {
         this.direccion = direccion;
         this.capacidadTotal = capacidadTotal;
     }
-    
-    
 
-    abstract double obtenerPrecioBase(Funcion funcion, String sector);
-
-
+    protected abstract double obtenerPrecioBase(Funcion funcion, String sector);
 
     protected abstract String getNombre();
 	
@@ -23,8 +19,6 @@ abstract class Sede {
 	protected abstract int getAsientosPorFila();
 	
 	protected abstract String getDireccion();
-
-
 
 	protected abstract Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int asiento);
 	

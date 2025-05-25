@@ -17,7 +17,7 @@ public class Ticketek implements ITicketek {
     private Map<String, Map<String, List<Entrada>>> entradasPorEspectaculoYFecha = new HashMap<>();
     private Map<String, Map<String, Double>> recaudacionPorSedeYEspectaculo = new HashMap<>();
 
-
+    //------------------------------------------------------------------COMPLETA-----------------------------------------
 	public void registrarSede(String nombre, String direccion, int capacidadMaxima) {	
         if (nombre == null || nombre.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido");
         if (direccion == null || direccion.isEmpty()) throw new IllegalArgumentException("Dirección inválida");
@@ -26,7 +26,8 @@ public class Ticketek implements ITicketek {
         sedes.put(nombre, new Estadio(nombre, direccion, capacidadMaxima));
 
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
 			String[] sectores, int[] capacidad, int[] porcentajeAdicional) {
@@ -36,29 +37,20 @@ public class Ticketek implements ITicketek {
         if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
         sedes.put(nombre, new Teatro(nombre, direccion, capacidadMaxima, asientosPorFila, sectores, capacidad, porcentajeAdicional));
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
 			int cantidadPuestos, double precioConsumicion, String[] sectores, int[] capacidad,
 			int[] porcentajeAdicional) {
-        /*if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0 || asientosPorFila <= 0 || cantidadFilas <= 0) {
-            throw new IllegalArgumentException("Datos de miniestadio inválidos");
-        }
-        if (sectores == null || capacidad == null || porcentajeAdicional == null ||
-            sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length) {
-            throw new IllegalArgumentException("Datos de sectores inválidos");
-        }
-        if (costoAdicional < 0) throw new IllegalArgumentException("Costo adicional inválido");
-        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
-        sedes.put(nombre, new Miniestadio(nombre, direccion, capacidadMaxima, asientosPorFila, cantidadFilas, costoAdicional, sectores, capacidad, porcentajeAdicional));
-*/
 	    if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0 || asientosPorFila <= 0 || cantidadPuestos <= 0)throw new IllegalArgumentException("Datos de sede inválidos");
 	    if (sectores == null || capacidad == null || porcentajeAdicional == null || sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length)throw new IllegalArgumentException("Datos de sectores inválidos");
 	    if (precioConsumicion < 0) throw new IllegalArgumentException("Precio de consumición inválido");
 	    if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
 	    sedes.put(nombre, new Miniestadio(nombre, direccion, capacidadMaxima, asientosPorFila, cantidadPuestos, precioConsumicion, sectores, capacidad, porcentajeAdicional));
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public void registrarUsuario(String email, String nombre, String apellido, String contrasenia) {
 	    if (email == null || email.isEmpty() || !email.contains("@")) throw new IllegalArgumentException("Email inválido");
@@ -69,13 +61,15 @@ public class Ticketek implements ITicketek {
 
 	    usuarios.put(email, new Usuario(email, nombre, apellido, contrasenia));
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public void registrarEspectaculo(String nombre) {
 		 if (espectaculos.containsKey(nombre)) throw new RuntimeException("Espectáculo ya registrado");
 	        espectaculos.put(nombre, new Espectaculo(nombre));
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public void agregarFuncion(String nombreEspectaculo, String fecha, String sede, double precioBase) {
 		
@@ -96,22 +90,24 @@ public class Ticketek implements ITicketek {
 
 	@Override
 	public List<IEntrada> venderEntrada(String nombreEspectaculo, String fecha, String email, String contrasenia, int cantidadEntradas) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
-	    if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Datos de usuario inválidos");
-	    if (cantidadEntradas <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida");
-
-	    Usuario usuario = usuarios.get(email);
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos");
-
-	    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
-	    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
-
-	    Funcion funcion = espectaculo.getFuncion(fecha);
-	    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
-
-	    Sede sede = funcion.getSede();
-	    if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada");
+		
+		//COMPROBAR DATOS
+		    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
+		    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
+		    if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Datos de usuario inválidos");
+		    if (cantidadEntradas <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida");
+	
+		    Usuario usuario = usuarios.get(email);
+		    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos");
+	
+		    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+		    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
+	
+		    Funcion funcion = espectaculo.getFuncion(fecha);
+		    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
+	
+		    Sede sede = funcion.getSede();
+		    if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada");
 
 	    List<IEntrada> nuevasEntradas = new ArrayList<>();
 	    try {
@@ -141,7 +137,8 @@ public class Ticketek implements ITicketek {
 	        throw new RuntimeException("Error al vender entradas: " + e.getMessage());
 	    }
 	}
-
+	
+	
 	@Override
 	public List<IEntrada> venderEntrada(String nombreEspectaculo, String fecha, String email, String contrasenia, int cantidadEntradas) {
 	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
@@ -189,7 +186,8 @@ public class Ticketek implements ITicketek {
 	        throw new RuntimeException("Error al vender entradas: " + e.getMessage());
 	    }
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public String listarFunciones(String nombreEspectaculo) {
 		
@@ -199,14 +197,16 @@ public class Ticketek implements ITicketek {
         
         return espectaculos.get(nombreEspectaculo).toString();
 	}
-
+	
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public List<IEntrada> listarEntradasEspectaculo(String nombreEspectaculo) {
 			if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
 	        if (!entradasPorEspectaculo.containsKey(nombreEspectaculo)) return new ArrayList<>();
 	        return new ArrayList<>(entradasPorEspectaculo.get(nombreEspectaculo));
 	}
-
+	
+	//------------------------------------------------------------------INCOMPLETA-----------------------------------------
 	@Override
 	public List<IEntrada> listarEntradasFuturas(String email, String contrasenia) {
         if (email == null || contrasenia == null || email.isEmpty() || contrasenia.isEmpty())throw new IllegalArgumentException("Datos inválidos");
@@ -222,6 +222,7 @@ public class Ticketek implements ITicketek {
         return futuras;
 	}
 
+	//------------------------------------------------------------------COMPLETA-----------------------------------------
 	@Override
 	public List<IEntrada> listarTodasLasEntradasDelUsuario(String email, String contrasenia) {
 		if (email == null || contrasenia == null || email.isEmpty() || contrasenia.isEmpty())throw new IllegalArgumentException("Datos inválidos");

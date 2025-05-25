@@ -38,10 +38,15 @@ class Estadio extends Sede {
 		return null;
 	}
 
-	@Override
-	protected Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int asiento) {
-		// TODO Auto-generated method stub
-		return null;
+	protected Entrada venderEntrada(Funcion funcion, Usuario usuario, int[] asiento) {
+		if (funcion == null) throw new IllegalArgumentException("Función no puede ser nula.");
+        if (usuario == null) throw new IllegalArgumentException("Usuario no puede ser nulo.");
+        
+        // Calcular el costo total de la entrada
+        double costoTotal = obtenerPrecioBase(funcion, "CAMPO");
+
+        // Crear y retornar la entrada
+        return new Entrada(funcion, usuario.email,"CAMPO", asiento, "CAMPO");
 	}
 
 }
