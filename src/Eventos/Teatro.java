@@ -1,33 +1,105 @@
+// Eventos/Teatro.java
 package Eventos;
 
-class Teatro extends Sede {
-    String[] sectores;
-    int[] capacidadPorSector;
-    int[] porcentajeIncremento;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap; // Make sure HashMap is imported
 
-    Teatro(String nombre, String direccion, int capacidadTotal, int asientosPorFila, String[] sectores, int[] capacidadPorSector, int[] porcentajeIncremento) {
+public class Teatro extends Sede {
+    private String[] sectores;
+    private int[] capacidadPorSector;
+    private int[] porcentajeIncremento;
+
+    public Teatro(String nombre, String direccion, int capacidadTotal, int asientosPorFila, String[] sectores, int[] capacidadPorSector, int[] porcentajeIncremento) {
         super(nombre, direccion, capacidadTotal);
-        this.asientosPorFila = asientosPorFila;
+        this.asientosPorFila = asientosPorFila; // Initialize the inherited field
         this.sectores = sectores;
         this.capacidadPorSector = capacidadPorSector;
         this.porcentajeIncremento = porcentajeIncremento;
     }
 
-    double obtenerPrecioBase(Funcion funcion, String sector) {
+    // New method: obtenerCapacidadPorSector
+    public int obtenerCapacidadPorSector(String sector) {
         for (int i = 0; i < sectores.length; i++) {
             if (sectores[i].equals(sector)) {
-                return funcion.precioBase * (1 + porcentajeIncremento[i] / 100.0);
+                return capacidadPorSector[i];
             }
         }
-        throw new RuntimeException("Sector no encontrado");
+        throw new RuntimeException("Sector '" + sector + "' no encontrado en el teatro " + nombre);
+    }
+
+    // New method: obtenerSectores
+    public String[] obtenerSectores() {
+        return sectores;
+    }
+
+    // New method: obtenerPorcentajeIncremento
+    public int obtenerPorcentajeIncremento(String sector) {
+        for (int i = 0; i < sectores.length; i++) {
+            if (sectores[i].equals(sector)) {
+                return porcentajeIncremento[i];
+            }
+        }
+        throw new RuntimeException("Sector '" + sector + "' no encontrado en el teatro " + nombre);
+    }
+
+    @Override
+    public double obtenerPrecioBase(Funcion funcion, String sector) {
+        for (int i = 0; i < sectores.length; i++) {
+            if (sectores[i].equals(sector)) {
+                return funcion.getPrecioBase() * (1 + porcentajeIncremento[i] / 100.0);
+            }
+        }
+        throw new RuntimeException("Sector '" + sector + "' no válido para la función en " + nombre);
     }
     
     @Override
+    public Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int asiento) {
+        if (funcion == null) throw new IllegalArgumentException("Función no puede ser nula.");
+        if (usuario == null) throw new IllegalArgumentException("Usuario no puede ser nulo.");
+        if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido.");
+        if (asiento <= 0) throw new IllegalArgumentException("Número de asiento inválido.");
+
+        // Check if the sector exists in this theater
+        int capacidadMaximaSector = 0;
+        boolean sectorEncontrado = false;
+        for (int i = 0; i < sectores.length; i++) {
+            if (sectores[i].equals(sector)) {
+                capacidadMaximaSector = capacidadPorSector[i];
+                sectorEncontrado = true;
+                break;
+            }
+        }
+
+        if (!sectorEncontrado) {
+            throw new RuntimeException("El sector '" + sector + "' no existe en este teatro.");
+        }
+
+        // Check if the seat is already occupied for this function and sector
+        if (estaAsientoOcupado(funcion, sector, asiento)) {
+            throw new RuntimeException("El asiento " + asiento + " en el sector " + sector + " ya está ocupado para esta función.");
+        }
+        
+        // Check if sector capacity is exceeded
+        if (getAsientosOcupadosEnSector(funcion, sector) >= capacidadMaximaSector) {
+            throw new RuntimeException("El sector " + sector + " ha alcanzado su capacidad máxima.");
+        }
+
+        // Mark the seat as occupied
+        marcarAsientoOcupado(funcion, sector, asiento);
+
+        // Calculate the total cost of the ticket
+        double costoTotal = obtenerPrecioBase(funcion, sector);
+
+        // Create and return the ticket
+        return new Entrada(funcion, usuario.getEmail(), costoTotal, sector, asiento);
+    }
+
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Teatro: ").append(nombre)
-          .append(" | Dirección: ").append(direccion)
-          .append(" | Capacidad: ").append(capacidadTotal)
+        StringBuilder sb = new StringBuilder(super.toString()); // Use super.toString() for common info
+        sb.append(" | Tipo: Teatro")
           .append(" | Asientos por fila: ").append(asientosPorFila)
           .append(" | Sectores: ");
         for (int i = 0; i < sectores.length; i++) {
@@ -36,86 +108,4 @@ class Teatro extends Sede {
         }
         return sb.toString();
     }
-
-	@Override
-	protected String getNombre() {
-		return nombre;
-	}
-
-	@Override
-	protected int getCapacidadTotal() {
-		return capacidadTotal;
-	}
-
-	@Override
-	protected int getAsientosPorFila() {
-		return asientosPorFila;
-	}
-
-	@Override
-	protected String getDireccion() {
-		return direccion;
-	}
-
-	@Override
-	protected Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int asiento) {
-		/**
-	     * Vende una entrada para una función, usuario, sector y asiento específicos.
-	     *
-	     * @param funcion La función para la que se vende la entrada.
-	     * @param usuario El usuario que compra la entrada.
-	     * @param sector El nombre del sector donde se ubica el asiento.
-	     * @param asiento El número de asiento dentro del sector.
-	     * @return La entrada vendida.
-	     * @throws IllegalArgumentException Si los datos de entrada son inválidos.
-	     * @throws RuntimeException Si el sector no existe, el asiento ya está ocupado o se excede la capacidad.
-	     */
-			if (funcion == null) throw new IllegalArgumentException("Función no puede ser nula.");
-	        if (usuario == null) throw new IllegalArgumentException("Usuario no puede ser nulo.");
-	        if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido.");
-	        if (asiento <= 0) throw new IllegalArgumentException("Número de asiento inválido.");
-
-	        // Obtener o inicializar el mapa de asientos ocupados para esta función
-	        Map<String, Set<Integer>> ocupadosPorSector = asientosOcupadosPorFuncion.computeIfAbsent(funcion, k -> new HashMap<>());
-	        
-	        // Obtener o inicializar el conjunto de asientos ocupados para este sector
-	        Set<Integer> asientosOcupadosEnSector = ocupadosPorSector.computeIfAbsent(sector, k -> new HashSet<>());
-
-	        // Verificar si el sector existe y obtener su capacidad
-	        int indiceSector = -1;
-	        int capacidadMaximaSector = 0;
-	        for (int i = 0; i < sectores.length; i++) {
-	            if (sectores[i].equals(sector)) {
-	                indiceSector = i;
-	                capacidadMaximaSector = capacidadPorSector[i];
-	                break;
-	            }
-	        }
-
-	        if (indiceSector == -1) {
-	            throw new RuntimeException("El sector '" + sector + "' no existe en este teatro.");
-	        }
-
-	        // Verificar si el asiento ya está ocupado
-	        if (asientosOcupadosEnSector.contains(asiento)) {
-	            throw new RuntimeException("El asiento " + asiento + " en el sector " + sector + " ya está ocupado para esta función.");
-	        }
-	        
-	        // Verificar si se excede la capacidad del sector
-	        if (asientosOcupadosEnSector.size() >= capacidadMaximaSector) {
-	            throw new RuntimeException("El sector " + sector + " ha alcanzado su capacidad máxima.");
-	        }
-
-	        // Marcar el asiento como ocupado
-	        asientosOcupadosEnSector.add(asiento);
-
-	        // Calcular el costo total de la entrada
-	        double costoTotal = obtenerPrecioBase(funcion, sector);
-
-	        // Crear y retornar la entrada
-	        return new Entrada(funcion, usuario, costoTotal, sector, asiento);
-		
-
-	}
-
 }

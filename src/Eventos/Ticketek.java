@@ -1,474 +1,631 @@
 package Eventos;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set; // Importar Set para el toString de Sede
 
 public class Ticketek implements ITicketek {
-	
-	private Map<String, Usuario> usuarios = new HashMap<>();
-    private Map<String, Sede> sedes = new HashMap<>();
-    private Map<String, Espectaculo> espectaculos = new HashMap<>();
 
-    // Acceso rápido para operaciones en O(1)
-    private Map<IEntrada, Entrada> entradasPorInstancia = new HashMap<>();
-    private Map<String, List<Entrada>> entradasPorEspectaculo = new HashMap<>();
-    private Map<String, Map<String, List<Entrada>>> entradasPorEspectaculoYFecha = new HashMap<>();
-    private Map<String, Map<String, Double>> recaudacionPorSedeYEspectaculo = new HashMap<>();
+    private Map<String, Usuario> usuarios;
+    private Map<String, Sede> sedes;
+    private Map<String, Espectaculo> espectaculos;
 
+    // Mapas para optimización en O(1)
+    private Map<String, Entrada> entradasPorId; // Clave: idEntrada (String), Valor: Entrada
+    private Map<String, Map<String, Double>> recaudacionPorSedeYEspectaculo; // Clave: nombreSede -> nombreEspectaculo -> Double
 
-	public void registrarSede(String nombre, String direccion, int capacidadMaxima) {	
-        if (nombre == null || nombre.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido");
-        if (direccion == null || direccion.isEmpty()) throw new IllegalArgumentException("Dirección inválida");
-        if (capacidadMaxima <= 0) throw new IllegalArgumentException("Capacidad inválida");
-        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
+    // Formateador para las fechas dd/MM/YY
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yy");
+
+    public Ticketek() {
+        this.usuarios = new HashMap<>();
+        this.sedes = new HashMap<>();
+        this.espectaculos = new HashMap<>();
+        this.entradasPorId = new HashMap<>();
+        this.recaudacionPorSedeYEspectaculo = new HashMap<>();
+    }
+
+    @Override
+    public void registrarSede(String nombre, String direccion, int capacidadMaxima) {
+        if (nombre == null || nombre.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido.");
+        if (direccion == null || direccion.isEmpty()) throw new IllegalArgumentException("Dirección inválida.");
+        if (capacidadMaxima <= 0) throw new IllegalArgumentException("Capacidad máxima inválida.");
+        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada con ese nombre.");
+
         sedes.put(nombre, new Estadio(nombre, direccion, capacidadMaxima));
+    }
 
-	}
-
-	@Override
-	public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
-			String[] sectores, int[] capacidad, int[] porcentajeAdicional) {
-        if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0 || asientosPorFila <= 0)throw new IllegalArgumentException("Datos de sede inválidos");
+    @Override
+    public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
+                              String[] sectores, int[] capacidad, int[] porcentajeAdicional) {
+        if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0)
+            throw new IllegalArgumentException("Datos de sede inválidos: nombre, dirección o capacidad.");
+        if (asientosPorFila <= 0)
+            throw new IllegalArgumentException("Datos de sede inválidos: asientos por fila.");
         if (sectores == null || capacidad == null || porcentajeAdicional == null ||
-            sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length)throw new IllegalArgumentException("Datos de sectores inválidos");
-        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
+            sectores.length == 0 || sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length)
+            throw new IllegalArgumentException("Datos de sectores inválidos: arrays nulos o de longitud inconsistente.");
+        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada con ese nombre.");
+
         sedes.put(nombre, new Teatro(nombre, direccion, capacidadMaxima, asientosPorFila, sectores, capacidad, porcentajeAdicional));
-	}
+    }
 
-	@Override
-	public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
-			int cantidadPuestos, double precioConsumicion, String[] sectores, int[] capacidad,
-			int[] porcentajeAdicional) {
-        /*if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0 || asientosPorFila <= 0 || cantidadFilas <= 0) {
-            throw new IllegalArgumentException("Datos de miniestadio inválidos");
-        }
+    @Override
+    public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
+                              int cantidadPuestos, double precioConsumicion, String[] sectores, int[] capacidad,
+                              int[] porcentajeAdicional) {
+        // Asumiendo que 'precioConsumicion' es el 'costoAdicional' para Miniestadio.
+        // 'cantidadPuestos' no se usa directamente en el constructor de Miniestadio según nuestra definición.
+        // Si 'cantidadPuestos' representa algo más en Miniestadio (ej. capacidad extra),
+        // el constructor de Miniestadio y su lógica deberían ser modificados.
+        
+        if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0)
+            throw new IllegalArgumentException("Datos de miniestadio inválidos: nombre, dirección o capacidad.");
+        if (asientosPorFila <= 0)
+            throw new IllegalArgumentException("Datos de miniestadio inválidos: asientos por fila.");
+        if (precioConsumicion < 0) throw new IllegalArgumentException("Precio de consumición (costo adicional) inválido.");
         if (sectores == null || capacidad == null || porcentajeAdicional == null ||
-            sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length) {
-            throw new IllegalArgumentException("Datos de sectores inválidos");
+            sectores.length == 0 || sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length)
+            throw new IllegalArgumentException("Datos de sectores inválidos: arrays nulos o de longitud inconsistente.");
+        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada con ese nombre.");
+
+        sedes.put(nombre, new Miniestadio(nombre, direccion, capacidadMaxima, asientosPorFila, sectores, capacidad, porcentajeAdicional, precioConsumicion));
+    }
+
+    @Override
+    public void registrarUsuario(String email, String nombre, String apellido, String contrasenia) {
+        if (email == null || email.isEmpty() || !email.contains("@")) throw new IllegalArgumentException("Email inválido.");
+        if (nombre == null || nombre.isEmpty()) throw new IllegalArgumentException("Nombre inválido.");
+        if (apellido == null || apellido.isEmpty()) throw new IllegalArgumentException("Apellido inválido.");
+        if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
+        if (usuarios.containsKey(email)) throw new RuntimeException("Usuario ya registrado con ese email.");
+
+        // Usamos el constructor de Usuario que toma nombre y apellido
+        usuarios.put(email, new Usuario(email, nombre, apellido, contrasenia));
+    }
+
+    @Override
+    public void registrarEspectaculo(String nombre) {
+        if (nombre == null || nombre.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (espectaculos.containsKey(nombre)) throw new RuntimeException("Espectáculo ya registrado con ese nombre.");
+        espectaculos.put(nombre, new Espectaculo(nombre));
+    }
+
+    @Override
+    public void agregarFuncion(String nombreEspectaculo, String fechaStr, String nombreSede, double precioBase) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (fechaStr == null || fechaStr.isEmpty()) throw new IllegalArgumentException("Fecha inválida.");
+        if (nombreSede == null || nombreSede.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido.");
+        if (precioBase <= 0) throw new IllegalArgumentException("Precio base inválido.");
+
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
+        Sede sede = sedes.get(nombreSede);
+        if (sede == null) throw new RuntimeException("Sede no encontrada.");
+
+        LocalDate fecha;
+        try {
+            fecha = LocalDate.parse(fechaStr, DATE_FORMATTER); // Usar el formateador definido
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de fecha inválido. Use dd/mm/YY.");
         }
-        if (costoAdicional < 0) throw new IllegalArgumentException("Costo adicional inválido");
-        if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
-        sedes.put(nombre, new Miniestadio(nombre, direccion, capacidadMaxima, asientosPorFila, cantidadFilas, costoAdicional, sectores, capacidad, porcentajeAdicional));
-*/
-	    if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0 || asientosPorFila <= 0 || cantidadPuestos <= 0)throw new IllegalArgumentException("Datos de sede inválidos");
-	    if (sectores == null || capacidad == null || porcentajeAdicional == null || sectores.length != capacidad.length || sectores.length != porcentajeAdicional.length)throw new IllegalArgumentException("Datos de sectores inválidos");
-	    if (precioConsumicion < 0) throw new IllegalArgumentException("Precio de consumición inválido");
-	    if (sedes.containsKey(nombre)) throw new RuntimeException("Sede ya registrada");
-	    sedes.put(nombre, new Miniestadio(nombre, direccion, capacidadMaxima, asientosPorFila, cantidadPuestos, precioConsumicion, sectores, capacidad, porcentajeAdicional));
-	}
 
-	@Override
-	public void registrarUsuario(String email, String nombre, String apellido, String contrasenia) {
-	    if (email == null || email.isEmpty() || !email.contains("@")) throw new IllegalArgumentException("Email inválido");
-	    if (nombre == null || nombre.isEmpty()) throw new IllegalArgumentException("Nombre inválido");
-	    if (apellido == null || apellido.isEmpty()) throw new IllegalArgumentException("Apellido inválido");
-	    if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida");
-	    if (usuarios.containsKey(email)) throw new RuntimeException("Usuario ya registrado con ese email");
+        Funcion funcion = new Funcion(espectaculo, sede, fecha, precioBase);
+        espectaculo.agregarFuncion(funcion); // Esto lanza excepción si ya hay una función para esa fecha
+    }
 
-	    usuarios.put(email, new Usuario(email, nombre, apellido, contrasenia));
-	}
+    @Override
+    public List<IEntrada> venderEntrada(String nombreEspectaculo, String fechaStr, String email, String contrasenia, int cantidadEntradas) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (fechaStr == null || fechaStr.isEmpty()) throw new IllegalArgumentException("Fecha inválida.");
+        if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Datos de usuario inválidos.");
+        if (cantidadEntradas <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida.");
 
-	@Override
-	public void registrarEspectaculo(String nombre) {
-		 if (espectaculos.containsKey(nombre)) throw new RuntimeException("Espectáculo ya registrado");
-	        espectaculos.put(nombre, new Espectaculo(nombre));
-	}
-
-	@Override
-	public void agregarFuncion(String nombreEspectaculo, String fecha, String sede, double precioBase) {
-		
-		if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-        if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
-        if (sede == null || sede.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido");
-        if (precioBase < 0) throw new IllegalArgumentException("Precio base inválido");
-        
-		Espectaculo e = espectaculos.get(nombreEspectaculo);
-        if (e == null) throw new RuntimeException("Espectáculo no encontrado");
-        Sede s = sedes.get(sede);
-        if (s == null) throw new RuntimeException("Sede no encontrada");
-
-        Funcion f = new Funcion(fecha, precioBase, s, e);
-        e.agregarFuncion(f);
-
-	}
-
-	@Override
-	public List<IEntrada> venderEntrada(String nombreEspectaculo, String fecha, String email, String contrasenia, int cantidadEntradas) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
-	    if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Datos de usuario inválidos");
-	    if (cantidadEntradas <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida");
-
-	    Usuario usuario = usuarios.get(email);
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos");
-
-	    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
-	    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
-
-	    Funcion funcion = espectaculo.getFuncion(fecha);
-	    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
-
-	    Sede sede = funcion.getSede();
-	    if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada");
-
-	    List<IEntrada> nuevasEntradas = new ArrayList<>();
-	    try {
-	        for (int i = 0; i < cantidadEntradas; i++) {
-	            // Asume que la sede tiene un método para vender entradas por cantidad,
-	            // si la sede soporta diferentes tipos de entradas (ej: con o sin sector),
-	            // esta lógica debería ser más sofisticada para elegir el tipo de entrada correcto.
-	            // Para simplificar, asumiremos que se vende una entrada "general" o por la capacidad total.
-	            Entrada entrada = sede.venderEntradaGeneral(funcion, usuario);
-	            nuevasEntradas.add(entrada);
-	            entradasPorInstancia.put(entrada, entrada); // Almacena por instancia
-	            entradasPorEspectaculo.computeIfAbsent(nombreEspectaculo, k -> new ArrayList<>()).add(entrada);
-	            entradasPorEspectaculoYFecha.computeIfAbsent(nombreEspectaculo, k -> new HashMap<>())
-	                                         .computeIfAbsent(fecha, k -> new ArrayList<>())
-	                                         .add(entrada);
-	            usuario.agregarEntrada(entrada);
-	            
-	            // Actualizar la recaudación
-	            double costoEntrada = entrada.precio();
-	            recaudacionPorSedeYEspectaculo.computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
-	                                          .merge(nombreEspectaculo, costoEntrada, Double::sum);
-	        }
-	        return nuevasEntradas;
-	    } catch (RuntimeException e) {
-	        // En caso de error (ej: capacidad agotada), se pueden revertir las ventas parciales si es necesario.
-	        // Por simplicidad, aquí solo relanzamos la excepción.
-	        throw new RuntimeException("Error al vender entradas: " + e.getMessage());
-	    }
-	}
-
-	@Override
-	public List<IEntrada> venderEntrada(String nombreEspectaculo, String fecha, String email, String contrasenia, int cantidadEntradas) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
-	    if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Credenciales de usuario inválidas");
-	    if (cantidadEntradas <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida");
-
-	    Usuario usuario = usuarios.get(email);
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos");
-
-	    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
-	    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
-
-	    Funcion funcion = espectaculo.getFuncion(fecha);
-	    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
-
-	    Sede sede = funcion.getSede();
-	    if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada");
-
-	    List<IEntrada> nuevasEntradas = new ArrayList<>();
-	    try {
-	        for (int i = 0; i < cantidadEntradas; i++) {
-	            // Asume que la sede tiene un método para vender entradas por cantidad,
-	            // si la sede soporta diferentes tipos de entradas (ej: con o sin sector),
-	            // esta lógica debería ser más sofisticada para elegir el tipo de entrada correcto.
-	            // Para simplificar, asumiremos que se vende una entrada "general" o por la capacidad total.
-	            Entrada entrada = sede.venderEntradaGeneral(funcion, usuario);
-	            nuevasEntradas.add(entrada);
-	            entradasPorInstancia.put(entrada, entrada); // Almacena por instancia
-	            entradasPorEspectaculo.computeIfAbsent(nombreEspectaculo, k -> new ArrayList<>()).add(entrada);
-	            entradasPorEspectaculoYFecha.computeIfAbsent(nombreEspectaculo, k -> new HashMap<>())
-	                                         .computeIfAbsent(fecha, k -> new ArrayList<>())
-	                                         .add(entrada);
-	            usuario.agregarEntrada(entrada);
-	            
-	            // Actualizar la recaudación
-	            double costoEntrada = entrada.getCostoTotal(); 
-	            recaudacionPorSedeYEspectaculo.computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
-	                                          .merge(nombreEspectaculo, costoEntrada, Double::sum);
-	        }
-	        return nuevasEntradas;
-	    } catch (RuntimeException e) {
-	        // En caso de error (ej: capacidad agotada), se pueden revertir las ventas parciales si es necesario.
-	        // Por simplicidad, aquí solo relanzamos la excepción.
-	        throw new RuntimeException("Error al vender entradas: " + e.getMessage());
-	    }
-	}
-
-	@Override
-	public String listarFunciones(String nombreEspectaculo) {
-		
-		if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-		
-        if (!espectaculos.containsKey(nombreEspectaculo)) throw new RuntimeException("Espectáculo no encontrado");
-        
-        return espectaculos.get(nombreEspectaculo).toString();
-	}
-
-	@Override
-	public List<IEntrada> listarEntradasEspectaculo(String nombreEspectaculo) {
-			if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	        if (!entradasPorEspectaculo.containsKey(nombreEspectaculo)) return new ArrayList<>();
-	        return new ArrayList<>(entradasPorEspectaculo.get(nombreEspectaculo));
-	}
-
-	@Override
-	public List<IEntrada> listarEntradasFuturas(String email, String contrasenia) {
-        if (email == null || contrasenia == null || email.isEmpty() || contrasenia.isEmpty())throw new IllegalArgumentException("Datos inválidos");
         Usuario usuario = usuarios.get(email);
-        if (usuario == null || !usuario.validarContrasena(contrasenia))throw new RuntimeException("Usuario o contraseña inválidos");
+        if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos.");
+
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
+
+        LocalDate fecha;
+        try {
+            fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de fecha inválido. Use dd/mm/YY.");
+        }
+
+        Funcion funcion = espectaculo.getFuncion(fecha);
+        if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada.");
+
+        Sede sede = funcion.getSede();
+        if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada.");
+
+        // Validar si la sede es numerada (Estadio) o no
+        if (!(sede instanceof Estadio)) {
+            throw new RuntimeException("Esta sede no soporta la venta por cantidad de entradas sin especificar sector/asiento (no es un Estadio).");
+        }
+        Estadio estadio = (Estadio) sede;
+
+        List<IEntrada> nuevasEntradas = new ArrayList<>();
+        try {
+            for (int i = 0; i < cantidadEntradas; i++) {
+                // Estadio vende entradas de tipo "CAMPO"
+                Entrada entrada = estadio.venderEntrada(funcion, usuario, "CAMPO", 1); // 1 unidad de capacidad
+                nuevasEntradas.add(entrada);
+                
+                // Registrar la entrada en los mapas de Ticketek
+                entradasPorId.put(entrada.getIdEntrada(), entrada);
+                usuario.agregarEntrada(entrada);
+                funcion.agregarEntrada(entrada); // Agregar entrada a la función
+                
+                // Actualizar la recaudación
+                recaudacionPorSedeYEspectaculo.computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
+                                              .merge(nombreEspectaculo, entrada.precio(), Double::sum);
+            }
+            return nuevasEntradas;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error al vender entradas: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<IEntrada> venderEntrada(String nombreEspectaculo, String fechaStr, String email, String contrasenia, String sector, int[] asientos) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (fechaStr == null || fechaStr.isEmpty()) throw new IllegalArgumentException("Fecha inválida.");
+        if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Credenciales de usuario inválidas.");
+        if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido.");
+        if (asientos == null || asientos.length == 0) throw new IllegalArgumentException("Asientos inválidos.");
+
+        Usuario usuario = usuarios.get(email);
+        if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos.");
+
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
+
+        LocalDate fecha;
+        try {
+            fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de fecha inválido. Use dd/mm/YY.");
+        }
+
+        Funcion funcion = espectaculo.getFuncion(fecha);
+        if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada.");
+
+        Sede sede = funcion.getSede();
+        if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada.");
+
+        // Validar si la sede es numerada (Teatro o Miniestadio)
+        if (!(sede instanceof Teatro)) { // Miniestadio hereda de Teatro
+            throw new RuntimeException("Esta sede no soporta la venta por sector y asiento (no es un Teatro o Miniestadio).");
+        }
+        Teatro teatro = (Teatro) sede;
+
+        List<IEntrada> nuevasEntradas = new ArrayList<>();
+        try {
+            for (int asiento : asientos) {
+                // Teatro o Miniestadio venden entradas de tipo "ASIENTO"
+                Entrada entrada = teatro.venderEntrada(funcion, usuario, sector, asiento);
+                nuevasEntradas.add(entrada);
+                
+                // Registrar la entrada en los mapas de Ticketek
+                entradasPorId.put(entrada.getIdEntrada(), entrada);
+                usuario.agregarEntrada(entrada);
+                funcion.agregarEntrada(entrada); // Agregar entrada a la función
+
+                // Actualizar la recaudación
+                recaudacionPorSedeYEspectaculo.computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
+                                              .merge(nombreEspectaculo, entrada.precio(), Double::sum);
+            }
+            return nuevasEntradas;
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error al vender entradas por sector y asiento: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public String listarFunciones(String nombreEspectaculo) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
+
+        StringBuilder sb = new StringBuilder();
+        Map<LocalDate, Funcion> funcionesDelEspectaculo = espectaculo.getFunciones();
+
+        if (funcionesDelEspectaculo.isEmpty()) {
+            sb.append("El espectáculo '").append(nombreEspectaculo).append("' no tiene funciones programadas.\n");
+            return sb.toString();
+        }
+
+        // Ordenar funciones por fecha para una salida consistente
+        funcionesDelEspectaculo.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> {
+                Funcion funcion = entry.getValue();
+                Sede sede = funcion.getSede();
+                
+                sb.append(" - (").append(funcion.getFecha().format(DATE_FORMATTER)).append(") ");
+                sb.append(sede.getNombre()).append(" - ");
+
+                if (sede instanceof Estadio) {
+                    // Formato para Estadio: "{ENTRADAS VENDIDAS} / {CAPACIDAD SEDE}"
+                    int entradasVendidas = sede.getAsientosOcupadosEnSector(funcion, "CAMPO"); // Asume "CAMPO" es el sector
+                    int capacidadTotal = sede.getCapacidadTotal();
+                    sb.append(entradasVendidas).append("/").append(capacidadTotal);
+                } else if (sede instanceof Teatro) { // Incluye Miniestadio
+                    // Formato para Teatro/Miniestadio: "{NOMBRE SECTOR1}: {ENTRADAS VENDIDAS 1} / {CAPACIDAD SECTOR} | ..."
+                    Teatro teatro = (Teatro) sede;
+                    String[] sectores = teatro.obtenerSectores();
+                    for (int i = 0; i < sectores.length; i++) {
+                        String sectorNombre = sectores[i];
+                        int entradasVendidasSector = sede.getAsientosOcupadosEnSector(funcion, sectorNombre);
+                        int capacidadSector = teatro.obtenerCapacidadPorSector(sectorNombre);
+                        sb.append(sectorNombre).append(": ").append(entradasVendidasSector).append("/").append(capacidadSector);
+                        if (i < sectores.length - 1) {
+                            sb.append(" | ");
+                        }
+                    }
+                }
+                sb.append("\n");
+            });
+        return sb.toString();
+    }
+
+    @Override
+    public List<IEntrada> listarEntradasEspectaculo(String nombreEspectaculo) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) {
+            throw new RuntimeException("Espectáculo no encontrado.");
+        }
+        // Delega al Espectaculo para obtener todas sus entradas vendidas
+        return espectaculo.listarEntradasVendidas();
+    }
+
+    @Override
+    public List<IEntrada> listarEntradasFuturas(String email, String contrasenia) {
+        if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Datos de usuario inválidos.");
+        
+        Usuario usuario = usuarios.get(email);
+        if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Usuario o contraseña inválidos.");
+        
         List<IEntrada> futuras = new ArrayList<>();
-        for (IEntrada e : usuario.entradas) {
-            Entrada ent = (Entrada) e;
-            if (!ent.anulada) {//No se si esta bien esta poronga <-----------------------
-                futuras.add(e);
+        LocalDate hoy = LocalDate.now();
+        
+        for (IEntrada iEntrada : usuario.getMisEntradas()) {
+            Entrada entrada = (Entrada) iEntrada; // Castear a Entrada para acceder a campos específicos
+            if (!entrada.estaAnulada() && entrada.getFuncion().getFecha().isAfter(hoy)) {
+                futuras.add(entrada);
             }
         }
         return futuras;
-	}
+    }
 
-	@Override
-	public List<IEntrada> listarTodasLasEntradasDelUsuario(String email, String contrasenia) {
-		if (email == null || contrasenia == null || email.isEmpty() || contrasenia.isEmpty())throw new IllegalArgumentException("Datos inválidos");
+    @Override
+    public List<IEntrada> listarTodasLasEntradasDelUsuario(String email, String contrasenia) {
+        if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Datos de usuario inválidos.");
+        
         Usuario usuario = usuarios.get(email);
-        if (usuario == null || !usuario.validarContrasena(contrasenia))throw new RuntimeException("Usuario o contraseña inválidos");
-        return new ArrayList<>(usuario.entradas);
-	}
+        if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Usuario o contraseña inválidos.");
+        
+        return usuario.getMisEntradas(); // Retorna una copia inmutable desde Usuario
+    }
 
-	@Override
-	public boolean anularEntrada(IEntrada entrada, String contrasenia) {
-	    if (entrada == null) throw new IllegalArgumentException("Entrada inválida");
-	    if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida");
+    @Override
+    public boolean anularEntrada(IEntrada entrada, String contrasenia) {
+        if (entrada == null) throw new IllegalArgumentException("Entrada inválida (nula).");
+        if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
 
-	    Entrada ent = entradasPorInstancia.get(entrada);
-	    if (ent == null || ent.anulada) return false; // La entrada no existe o ya está anulada
+        Entrada entParaAnular = entradasPorId.get(entrada.getIdEntrada());
+        if (entParaAnular == null || entParaAnular.estaAnulada()) {
+            return false; // La entrada no existe o ya está anulada
+        }
+        
+        // Verificar si la fecha de la entrada ya pasó
+        if (entParaAnular.getFuncion().getFecha().isBefore(LocalDate.now())) {
+            return false; // No se puede anular una entrada de una función pasada.
+        }
 
-	    Usuario usuario = usuarios.get(ent.getUsuario().getEmail());
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Contraseña incorrecta para el usuario de la entrada");
+        Usuario usuario = usuarios.get(entParaAnular.getEmail()); // Usar getEmail() de IEntrada
+        if (usuario == null || !usuario.autenticar(contrasenia)) {
+            throw new RuntimeException("Contraseña incorrecta para el usuario asociado a esta entrada.");
+        }
 
-	    // Lógica para anular la entrada en la sede
-	    Sede sede = ent.getFuncion().getSede();
-	    boolean anuladaEnSede = sede.anularEntrada(ent); // Asume que la sede maneja la disponibilidad de asientos
-	    
-	    if (anuladaEnSede) {
-	        ent.anular(); // Marca la entrada como anulada
-	        // Opcional: remover de las listas de acceso rápido si la lógica de negocio lo requiere,
-	        // pero generalmente se mantienen con el flag 'anulada' para historial.
-	        // Por ejemplo, para las listas de entradas futuras, se filtraría por 'anulada == false'.
-	        
-	        // Descontar de la recaudación
-	        double costoEntrada = ent.getCostoTotal();
-	        String nombreEspectaculo = ent.getFuncion().getEspectaculo().getNombre();
-	        String nombreSede = sede.getNombre();
+        // Marcar la entrada como anulada
+        entParaAnular.setAnulada(true);
 
-	        recaudacionPorSedeYEspectaculo.computeIfPresent(nombreSede, (s, espectaculosRec) -> {
-	            espectaculosRec.computeIfPresent(nombreEspectaculo, (e, recaudado) -> recaudado - costoEntrada);
-	            return espectaculosRec;
-	        });
+        // Liberar el asiento/capacidad en la Sede y Función
+        Sede sede = entParaAnular.getFuncion().getSede();
+        Funcion funcion = entParaAnular.getFuncion();
+        
+        if (entParaAnular.getTipo().equalsIgnoreCase("ASIENTO")) {
+            sede.desmarcarAsientoOcupado(funcion, entParaAnular.getSector(), entParaAnular.getAsientos()[0]);
+        } else if (entParaAnular.getTipo().equalsIgnoreCase("CAMPO")) {
+            sede.desmarcarAsientoOcupado(funcion, "CAMPO", 1); 
+        }
+        
+        funcion.eliminarEntrada(entParaAnular); // Eliminar de la función
 
-	        return true;
-	    }
-	    return false;
-	}
+        // Descontar de la recaudación consolidada
+        double costoEntradaAnulada = entParaAnular.precio();
+        String nombreEspectaculo = entParaAnular.getFuncion().getEspectaculo().getNombre();
+        String nombreSede = sede.getNombre();
 
-	@Override
-	public IEntrada cambiarEntrada(IEntrada entrada, String contrasenia, String fecha) {
-	    if (entrada == null) throw new IllegalArgumentException("Entrada inválida");
-	    if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida");
+        recaudacionPorSedeYEspectaculo.computeIfPresent(nombreSede, (s, espectaculosRec) -> {
+            espectaculosRec.computeIfPresent(nombreEspectaculo, (e, recaudado) -> recaudado - costoEntradaAnulada);
+            return espectaculosRec;
+        });
 
-	    Entrada entActual = entradasPorInstancia.get(entrada);
-	    if (entActual == null || entActual.anulada) throw new RuntimeException("Entrada no encontrada o ya anulada");
+        return true;
+    }
 
-	    Usuario usuario = usuarios.get(entActual.getEmail());
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Contraseña incorrecta para el usuario de la entrada");
+    @Override
+    public IEntrada cambiarEntrada(IEntrada entradaExistente, String contrasenia, String nuevaFechaStr, String nuevoSector, int nuevoAsiento) {
+        if (entradaExistente == null) throw new IllegalArgumentException("Entrada inválida (nula).");
+        if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
+        if (nuevaFechaStr == null || nuevaFechaStr.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida.");
+        if (nuevoSector == null || nuevoSector.isEmpty()) throw new IllegalArgumentException("Nuevo sector inválido.");
+        if (nuevoAsiento <= 0) throw new IllegalArgumentException("Nuevo asiento inválido.");
 
-	    Espectaculo espectaculo = entActual.getFuncion().getEspectaculo();
-	    Funcion nuevaFuncion = espectaculo.getFuncion(fecha);
-	    if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + fecha);
-	    if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
-	        throw new RuntimeException("El cambio de fecha no permite cambio de sede.");
-	    }
-	    
-	    try {
-	        // Asume que la sede tiene un método para cambiar una entrada general
-	        IEntrada nuevaEntrada = entActual.getFuncion().getSede().cambiarEntradaGeneral(entActual, nuevaFuncion);
+        Entrada entActual = entradasPorId.get(entradaExistente.getIdEntrada());
+        if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
+        
+        // Verificar si la fecha de la entrada actual ya pasó
+        if (entActual.getFuncion().getFecha().isBefore(LocalDate.now())) {
+            throw new RuntimeException("No se puede cambiar una entrada cuya función ya ha pasado.");
+        }
 
-	        // Anular la entrada vieja (lógica similar a anularEntrada pero sin quitarla del usuario)
-	        entActual.anular(); // Marcamos la vieja como anulada
-	        usuario.removerEntrada(entActual); // La quitamos de las entradas activas del usuario si tu lista es filtrada
-	        
-	        // Agregar la nueva entrada
-	        usuario.agregarEntrada((Entrada) nuevaEntrada);
-	        entradasPorInstancia.put(nuevaEntrada, (Entrada) nuevaEntrada);
-	        entradasPorEspectaculo.computeIfAbsent(espectaculo.getNombre(), k -> new ArrayList<>()).add((Entrada) nuevaEntrada);
-	        entradasPorEspectaculoYFecha.computeIfAbsent(espectaculo.getNombre(), k -> new HashMap<>())
-	                                     .computeIfAbsent(fecha, k -> new ArrayList<>())
-	                                     .add((Entrada) nuevaEntrada);
+        Usuario usuario = usuarios.get(entActual.getEmail());
+        if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Contraseña incorrecta para el usuario de la entrada.");
 
-	        // Ajustar recaudación: descontar la antigua y sumar la nueva
-	        double costoVieja = entActual.getCostoTotal();
-	        double costoNueva = nuevaEntrada.getCostoTotal();
-	        String nombreSede = entActual.getFuncion().getSede().getNombre();
-	        String nombreEspectaculo = espectaculo.getNombre();
+        Espectaculo espectaculo = entActual.getFuncion().getEspectaculo();
+        LocalDate nuevaFecha;
+        try {
+            nuevaFecha = LocalDate.parse(nuevaFechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de nueva fecha inválido. Use dd/mm/YY.");
+        }
+        
+        Funcion nuevaFuncion = espectaculo.getFuncion(nuevaFecha);
+        if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + nuevaFechaStr + " del mismo espectáculo.");
+        
+        // La regla indica que el cambio de fecha, sector y asiento no permite cambio de sede.
+        if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
+            throw new RuntimeException("El cambio de función no permite cambio de sede.");
+        }
+        
+        // Validar que la sede de la entrada original es un Teatro (o Miniestadio)
+        Sede sedeOriginal = entActual.getFuncion().getSede();
+        if (!(sedeOriginal instanceof Teatro)) {
+            throw new RuntimeException("El tipo de sede de la entrada original no soporta cambio de sector y asiento.");
+        }
+        Teatro teatroOriginal = (Teatro) sedeOriginal;
 
-	        recaudacionPorSedeYEspectaculo.computeIfPresent(nombreSede, (s, espectaculosRec) -> {
-	            espectaculosRec.computeIfPresent(nombreEspectaculo, (e, recaudado) -> recaudado - costoVieja + costoNueva);
-	            return espectaculosRec;
-	        });
+        try {
+            // 1. Anular la entrada antigua
+            boolean anulado = anularEntrada(entradaExistente, contrasenia);
+            if (!anulado) {
+                // Si la anulación falla (ej. por fecha pasada, aunque ya chequeamos), lanzar error
+                throw new RuntimeException("Fallo al anular la entrada original para el cambio.");
+            }
 
-	        return nuevaEntrada;
+            // 2. Vender la nueva entrada en el nuevo sector/asiento de la nueva función
+            Entrada nuevaEntrada = teatroOriginal.venderEntrada(nuevaFuncion, usuario, nuevoSector, nuevoAsiento);
 
-	    } catch (RuntimeException e) {
-	        throw new RuntimeException("Error al cambiar la entrada de fecha: " + e.getMessage());
-	    }
-	}
+            // 3. Registrar la nueva entrada en los mapas de Ticketek
+            entradasPorId.put(nuevaEntrada.getIdEntrada(), nuevaEntrada);
+            usuario.agregarEntrada(nuevaEntrada);
+            nuevaFuncion.agregarEntrada(nuevaEntrada); 
 
+            // 4. Actualizar la recaudación (la anulación ya descontó, ahora sumamos la nueva)
+            recaudacionPorSedeYEspectaculo.computeIfAbsent(sedeOriginal.getNombre(), k -> new HashMap<>())
+                                          .merge(espectaculo.getNombre(), nuevaEntrada.precio(), Double::sum);
 
-	@Override
-	public IEntrada cambiarEntrada(IEntrada entrada, String contrasenia, String fecha, String sector, int asiento) {
-	    if (entrada == null) throw new IllegalArgumentException("Entrada inválida");
-	    if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida");
-	    if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Nuevo sector inválido");
-	    if (asiento <= 0) throw new IllegalArgumentException("Nuevo asiento inválido");
+            return nuevaEntrada;
 
-	    Entrada entActual = entradasPorInstancia.get(entrada);
-	    if (entActual == null || entActual.anulada) throw new RuntimeException("Entrada no encontrada o ya anulada");
+        } catch (RuntimeException e) {
+            // Es crucial que aquí se manejen los errores de manera que el sistema no quede en un estado inconsistente.
+            // Si la nueva venta falla después de la anulación, la entrada original sigue anulada.
+            // Para un sistema robusto, se debería considerar una transacción (try-catch-finally con rollback).
+            throw new RuntimeException("Error al cambiar la entrada de fecha, sector y asiento: " + e.getMessage());
+        }
+    }
 
-	    Usuario usuario = usuarios.get(entActual.getUsuario().getEmail());
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Contraseña incorrecta para el usuario de la entrada");
+    @Override
+    public IEntrada cambiarEntrada(IEntrada entradaExistente, String contrasenia, String nuevaFechaStr) {
+        if (entradaExistente == null) throw new IllegalArgumentException("Entrada inválida (nula).");
+        if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
+        if (nuevaFechaStr == null || nuevaFechaStr.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida.");
 
-	    Espectaculo espectaculo = entActual.getFuncion().getEspectaculo();
-	    Funcion nuevaFuncion = espectaculo.getFuncion(fecha);
-	    if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + fecha);
-	    if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
-	        throw new RuntimeException("El cambio de fecha, sector y asiento no permite cambio de sede.");
-	    }
+        Entrada entActual = entradasPorId.get(entradaExistente.getIdEntrada());
+        if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
+        
+        // Verificar si la fecha de la entrada actual ya pasó
+        if (entActual.getFuncion().getFecha().isBefore(LocalDate.now())) {
+            throw new RuntimeException("No se puede cambiar una entrada cuya función ya ha pasado.");
+        }
 
-	    try {
-	        // Asume que la sede tiene un método para cambiar una entrada específica
-	        IEntrada nuevaEntrada = entActual.getFuncion().getSede().cambiarEntrada(entActual, nuevaFuncion, sector, asiento);
+        Usuario usuario = usuarios.get(entActual.getEmail());
+        if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Contraseña incorrecta para el usuario de la entrada.");
 
-	        // Anular la entrada vieja (lógica similar a anularEntrada pero sin quitarla del usuario)
-	        entActual.anular(); // Marcamos la vieja como anulada
-	        usuario.removerEntrada(entActual); 
-	        
-	        // Agregar la nueva entrada
-	        usuario.agregarEntrada((Entrada) nuevaEntrada);
-	        entradasPorInstancia.put(nuevaEntrada, (Entrada) nuevaEntrada);
-	        entradasPorEspectaculo.computeIfAbsent(espectaculo.getNombre(), k -> new ArrayList<>()).add((Entrada) nuevaEntrada);
-	        entradasPorEspectaculoYFecha.computeIfAbsent(espectaculo.getNombre(), k -> new HashMap<>())
-	                                     .computeIfAbsent(fecha, k -> new ArrayList<>())
-	                                     .add((Entrada) nuevaEntrada);
-	        
-	        // Ajustar recaudación: descontar la antigua y sumar la nueva
-	        double costoVieja = entActual.getCostoTotal();
-	        double costoNueva = nuevaEntrada.getCostoTotal();
-	        String nombreSede = entActual.getFuncion().getSede().getNombre();
-	        String nombreEspectaculo = espectaculo.getNombre();
+        Espectaculo espectaculo = entActual.getFuncion().getEspectaculo();
+        LocalDate nuevaFecha;
+        try {
+            nuevaFecha = LocalDate.parse(nuevaFechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de nueva fecha inválido. Use dd/mm/YY.");
+        }
+        
+        Funcion nuevaFuncion = espectaculo.getFuncion(nuevaFecha);
+        if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + nuevaFechaStr + " del mismo espectáculo.");
+        
+        // La regla indica que el cambio de fecha no permite cambio de sede.
+        if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
+            throw new RuntimeException("El cambio de función a otra fecha no permite cambio de sede.");
+        }
 
-	        recaudacionPorSedeYEspectaculo.computeIfPresent(nombreSede, (s, espectaculosRec) -> {
-	            espectaculosRec.computeIfPresent(nombreEspectaculo, (e, recaudado) -> recaudado - costoVieja + costoNueva);
-	            return espectaculosRec;
-	        });
+        Sede sedeOriginal = entActual.getFuncion().getSede();
+        String tipoEntrada = entActual.getTipo();
+        String sectorOriginal = entActual.getSector();
+        int[] asientosOriginales = entActual.getAsientos();
 
-	        return nuevaEntrada;
+        try {
+            // 1. Anular la entrada antigua
+            boolean anulado = anularEntrada(entradaExistente, contrasenia);
+            if (!anulado) {
+                throw new RuntimeException("Fallo al anular la entrada original para el cambio.");
+            }
 
-	    } catch (RuntimeException e) {
-	        throw new RuntimeException("Error al cambiar la entrada de fecha, sector y asiento: " + e.getMessage());
-	    }
-	}
+            // 2. Crear y vender la nueva entrada, manteniendo el tipo de asiento/campo
+            Entrada nuevaEntrada;
+            if (tipoEntrada.equalsIgnoreCase("CAMPO")) {
+                if (!(sedeOriginal instanceof Estadio)) throw new RuntimeException("Inconsistencia: entrada de CAMPO en sede no Estadio.");
+                nuevaEntrada = ((Estadio) sedeOriginal).venderEntrada(nuevaFuncion, usuario, sectorOriginal, 1);
+            } else if (tipoEntrada.equalsIgnoreCase("ASIENTO")) {
+                if (!(sedeOriginal instanceof Teatro)) throw new RuntimeException("Inconsistencia: entrada de ASIENTO en sede no Teatro/Miniestadio.");
+                if (asientosOriginales == null || asientosOriginales.length == 0) throw new RuntimeException("Asiento original inválido para cambio de fecha.");
+                nuevaEntrada = ((Teatro) sedeOriginal).venderEntrada(nuevaFuncion, usuario, sectorOriginal, asientosOriginales[0]);
+            } else {
+                throw new RuntimeException("Tipo de entrada desconocido: " + tipoEntrada);
+            }
 
-	@Override
-	public double costoEntrada(String nombreEspectaculo, String fecha) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
+            // 3. Registrar la nueva entrada en los mapas de Ticketek
+            entradasPorId.put(nuevaEntrada.getIdEntrada(), nuevaEntrada);
+            usuario.agregarEntrada(nuevaEntrada);
+            nuevaFuncion.agregarEntrada(nuevaEntrada); 
+            
+            // 4. Actualizar la recaudación (la anulación ya descontó, ahora sumamos la nueva)
+            recaudacionPorSedeYEspectaculo.computeIfAbsent(sedeOriginal.getNombre(), k -> new HashMap<>())
+                                          .merge(espectaculo.getNombre(), nuevaEntrada.precio(), Double::sum);
 
-	    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
-	    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
+            return nuevaEntrada;
 
-	    Funcion funcion = espectaculo.getFuncion(fecha);
-	    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error al cambiar la entrada de fecha: " + e.getMessage());
+        }
+    }
 
-	    return funcion.getPrecioBase();
-	}
+    @Override
+    public double costoEntrada(String nombreEspectaculo, String fechaStr) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (fechaStr == null || fechaStr.isEmpty()) throw new IllegalArgumentException("Fecha inválida.");
 
-	@Override
-	public double costoEntrada(String nombreEspectaculo, String fecha, String sector) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
-	    if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido");
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
 
-	    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
-	    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
+        LocalDate fecha;
+        try {
+            fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de fecha inválido. Use dd/mm/YY.");
+        }
 
-	    Funcion funcion = espectaculo.getFuncion(fecha);
-	    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
+        Funcion funcion = espectaculo.getFuncion(fecha);
+        if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada.");
 
-	    Sede sede = funcion.getSede();
-	    // Asume que la Sede tiene un método para calcular el costo total de una entrada dado un sector
-	    // Esto es crucial para que los diferentes tipos de sedes (Estadio, Teatro, Miniestadio) apliquen sus lógicas de precios.
-	    return sede.calcularCostoEntradaPorSector(funcion.getPrecioBase(), sector);
-	}
-	@Override
-	public double totalRecaudado(String nombreEspectaculo) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    
-	    double total = 0;
-	    for (Map<String, Double> recaudacionSede : recaudacionPorSedeYEspectaculo.values()) {
-	        total += recaudacionSede.getOrDefault(nombreEspectaculo, 0.0);
-	    }
-	    return total;
-	}
-	
-	@Override
-	public double totalRecaudadoPorSede(String nombreEspectaculo, String nombreSede) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (nombreSede == null || nombreSede.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido");
+        Sede sede = funcion.getSede();
+        if (!(sede instanceof Estadio)) {
+             throw new RuntimeException("Este método es solo para estadios. Para sedes con sectores, use el método con 'sector'.");
+        }
 
-	    Map<String, Double> recaudacionEspectaculos = recaudacionPorSedeYEspectaculo.get(nombreSede);
-	    if (recaudacionEspectaculos == null) return 0.0; 
+        // En estadios, el "precio de la entrada" es el precio base de la función
+        return funcion.getPrecioBase();
+    }
 
-	    return recaudacionEspectaculos.getOrDefault(nombreEspectaculo, 0.0);
-	}
+    @Override
+    public double costoEntrada(String nombreEspectaculo, String fechaStr, String sector) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (fechaStr == null || fechaStr.isEmpty()) throw new IllegalArgumentException("Fecha inválida.");
+        if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido.");
 
-	@Override
-	public List<IEntrada> venderEntrada(String nombreEspectaculo, String fecha, String email, String contrasenia, String sector, int[] asientos) {
-	    if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido");
-	    if (fecha == null || fecha.isEmpty()) throw new IllegalArgumentException("Fecha inválida");
-	    if (email == null || email.isEmpty() || contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Credenciales de usuario inválidas");
-	    if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido");
-	    if (asientos == null || asientos.length == 0) throw new IllegalArgumentException("Asientos inválidos");
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
 
-	    Usuario usuario = usuarios.get(email);
-	    if (usuario == null || !usuario.validarContrasena(contrasenia)) throw new RuntimeException("Usuario o contraseña incorrectos");
+        LocalDate fecha;
+        try {
+            fecha = LocalDate.parse(fechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de fecha inválido. Use dd/mm/YY.");
+        }
 
-	    Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
-	    if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado");
+        Funcion funcion = espectaculo.getFuncion(fecha);
+        if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada.");
 
-	    Funcion funcion = espectaculo.getFuncion(fecha);
-	    if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada");
+        Sede sede = funcion.getSede();
+        if (!(sede instanceof Teatro)) { // Miniestadio hereda de Teatro
+            throw new RuntimeException("Este método es solo para sedes con asientos y sectores (Teatros o Miniestadios).");
+        }
+        
+        // Llama al método de la sede para obtener el precio específico del sector.
+        return sede.obtenerPrecioBase(funcion, sector);
+    }
+    
+    @Override
+    public double totalRecaudado(String nombreEspectaculo) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        
+        Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
+        if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
+        
+        // Delega a la clase Espectaculo que ya tiene la lógica de sumar la recaudación de todas sus funciones
+        return espectaculo.calcularRecaudacionTotal();
+    }
+    
+    @Override
+    public double totalRecaudadoPorSede(String nombreEspectaculo, String nombreSede) {
+        if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
+        if (nombreSede == null || nombreSede.isEmpty()) throw new IllegalArgumentException("Nombre de sede inválido.");
 
-	    Sede sede = funcion.getSede();
-	    if (sede == null) throw new RuntimeException("Sede asociada a la función no encontrada");
+        Map<String, Double> recaudacionEspectaculosEnSede = recaudacionPorSedeYEspectaculo.get(nombreSede);
+        if (recaudacionEspectaculosEnSede == null) {
+            return 0.0; // Si la sede no tiene recaudación registrada para ningún espectáculo
+        }
 
-	    List<IEntrada> nuevasEntradas = new ArrayList<>();
-	    try {
-	        for (int asiento : asientos) {
-	            Entrada entrada = sede.venderEntrada(funcion, usuario, sector, asiento); // Asume que la sede tiene este método
-	            nuevasEntradas.add(entrada);
-	            entradasPorInstancia.put(entrada, entrada);
-	            entradasPorEspectaculo.computeIfAbsent(nombreEspectaculo, k -> new ArrayList<>()).add(entrada);
-	            entradasPorEspectaculoYFecha.computeIfAbsent(nombreEspectaculo, k -> new HashMap<>())
-	                                         .computeIfAbsent(fecha, k -> new ArrayList<>())
-	                                         .add(entrada);
-	            usuario.agregarEntrada(entrada);
-	            
-	            // Actualizar la recaudación
-	            double costoEntrada = entrada.precio();
-	            recaudacionPorSedeYEspectaculo.computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
-	                                          .merge(nombreEspectaculo, costoEntrada, Double::sum);
-	        }
-	        return nuevasEntradas;
-	    } catch (RuntimeException e) {
-	        throw new RuntimeException("Error al vender entradas por sector y asiento: " + e.getMessage());
-	    }
-	}
+        // Acceso O(1) al valor precalculado
+        return recaudacionEspectaculosEnSede.getOrDefault(nombreEspectaculo, 0.0);
+    }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("--- Sistema Ticketek ---\n");
+
+        sb.append("## Usuarios Registrados (").append(usuarios.size()).append("):\n");
+        if (usuarios.isEmpty()) {
+            sb.append("  Ninguno.\n");
+        } else {
+            for (Usuario usuario : usuarios.values()) {
+                sb.append("  ").append(usuario.toString().replace("\n", "\n  ")).append("\n");
+            }
+        }
+        sb.append("---\n");
+
+        sb.append("## Sedes Registradas (").append(sedes.size()).append("):\n");
+        if (sedes.isEmpty()) {
+            sb.append("  Ninguna.\n");
+        } else {
+            for (Sede sede : sedes.values()) {
+                sb.append("  ").append(sede.toString()).append("\n");
+            }
+        }
+        sb.append("---\n");
+
+        sb.append("## Espectáculos Registrados (").append(espectaculos.size()).append("):\n");
+        if (espectaculos.isEmpty()) {
+            sb.append("  Ninguno.\n");
+        } else {
+            for (Espectaculo espectaculo : espectaculos.values()) {
+                sb.append("  ").append(espectaculo.toString().replace("\n", "\n  ")).append("\n");
+            }
+        }
+        sb.append("------------------------\n");
+        return sb.toString();
+    }
 }
