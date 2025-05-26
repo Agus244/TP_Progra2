@@ -37,18 +37,19 @@ public class Usuario {
         return this.contrasenia.equals(contrasenia); // Simple comparación, no segura para producción.
     }
 
-    public void agregarEntrada(Entrada entrada) { // Recibe Entrada, la convierte a IEntrada para la lista
+    public void agregarEntrada(IEntrada entrada) {
         if (entrada != null) {
             this.misEntradas.add(entrada);
         }
     }
 
-    public boolean eliminarEntrada(Entrada entrada) { // Elimina por objeto
+    public boolean eliminarEntrada(IEntrada entrada) {
         if (entrada != null) {
             return this.misEntradas.remove(entrada);
         }
         return false;
     }
+
 
     // Getters
     public String getEmail() {
