@@ -121,13 +121,13 @@ public class Principal {
      	
 		// 8) Anular una entrada
         
-      //  ticketek.anularEntrada(entradasAlcides.getLast(), "1234");
+         //ticketek.anularEntrada(entradasAlcides.getLast(), "1234");
         
         
 		// 9) Cambiar una entrada
 		
         // Cambio la fecha de una entrada para estadio
-        // ticketek.cambiarEntrada(entradasAlcides.getFirst(), "1234","01/08/25");
+         //ticketek.cambiarEntrada(entradasAlcides.getFirst(), "1234","01/08/25");
 
         // Cambio la fecha de una entrada para teatro
         //ticketek.cambiarEntrada(entradasConejo.getLast(), "1234","31/08/25", "Platea VIP", 30);

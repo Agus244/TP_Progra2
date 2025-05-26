@@ -1,8 +1,9 @@
 package Eventos;
 
-import java.time.format.DateTimeFormatter; // Para formatear la fecha
-import java.util.Objects; // Para equals() y hashCode()
-import java.util.UUID;    // Para generar un ID único para cada entrada
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Objects; 
+import java.util.UUID;    
 
 public class Entrada implements IEntrada {
     private String idEntrada; // Identificador único de la entrada
@@ -14,15 +15,8 @@ public class Entrada implements IEntrada {
     private boolean anulada;
     private boolean usada;
 
-    /**
-     * Constructor para una entrada con asiento específico (ej. Teatro, Miniestadio).
-     *
-     * @param funcion   La función a la que pertenece la entrada.
-     * @param usuario   El usuario que compró la entrada.
-     * @param sector    El sector de la entrada (ej. "Platea", "Palco").
-     * @param asiento   El número de asiento.
-     * @throws IllegalArgumentException Si algún parámetro es nulo o inválido.
-     */
+   
+     
     public Entrada(Funcion funcion, Usuario usuario, String sector, int asiento) {
         if (funcion == null) throw new IllegalArgumentException("La función no puede ser nula.");
         if (usuario == null) throw new IllegalArgumentException("El usuario no puede ser nulo.");
@@ -39,15 +33,8 @@ public class Entrada implements IEntrada {
         this.usada = false;
     }
 
-    /**
-     * Constructor para una entrada de tipo "CAMPO" (ej. Estadio).
-     * En este caso, no hay asientos específicos, solo una "unidad" de capacidad.
-     *
-     * @param funcion   La función a la que pertenece la entrada.
-     * @param usuario   El usuario que compró la entrada.
-     * @param sector    El sector (debería ser "CAMPO" para este constructor).
-     * @throws IllegalArgumentException Si algún parámetro es nulo o inválido.
-     */
+    
+     
     public Entrada(Funcion funcion, Usuario usuario, String sector) {
         if (funcion == null) throw new IllegalArgumentException("La función no puede ser nula.");
         if (usuario == null) throw new IllegalArgumentException("El usuario no puede ser nulo.");
@@ -87,13 +74,21 @@ public class Entrada implements IEntrada {
             }
             return sb.toString();
         }
-        return "Ubicación Desconocida"; // Fallback
+        return "Ubicación Desconocida"; 
     }
 
     @Override
     public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        return String.format("- %s - %s - %s - %s",
+        String estado = "";
+
+       
+        if (funcion.getFecha().isBefore(LocalDate.now())) {
+            estado = " P - "; // Añade " P - " si la fecha ya pasó
+        }
+
+        return String.format("%s- %s - %s - %s - %s",
+                estado, // Agregamos el estado aquí
                 funcion.getFecha().format(formatter),
                 funcion.getEspectaculo().getNombre(),
                 funcion.getSede().getNombre(),
@@ -146,7 +141,7 @@ public class Entrada implements IEntrada {
         this.usada = fueUsada;
     }
     
-    // --- Métodos Adicionales---
+   
 
     // Este getter es necesario para la clase Ticketek en anularEntrada/cambiarEntrada
     public String getIdEntrada() {

@@ -3,8 +3,7 @@ package Eventos;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap; // Make sure HashMap is imported
-
+import java.util.HashMap; 
 public class Teatro extends Sede {
     private String[] sectores;
     private int[] capacidadPorSector;

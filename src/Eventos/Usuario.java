@@ -7,10 +7,10 @@ import java.util.Objects;
 
 public class Usuario {
     private String email;
-    private String nombre; // Nuevo campo
-    private String apellido; // Nuevo campo
+    private String nombre;
+    private String apellido; 
     private String contrasenia;
-    private List<IEntrada> misEntradas; // Usamos IEntrada para mantener la abstracción
+    private List<IEntrada> misEntradas;
 
     public Usuario(String email, String nombre, String apellido, String contrasenia) {
         if (email == null || email.trim().isEmpty() || !email.contains("@")) {
@@ -29,12 +29,12 @@ public class Usuario {
         this.email = email;
         this.nombre = nombre;
         this.apellido = apellido;
-        this.contrasenia = contrasenia; // En una aplicación real, se debería hashear la contraseña.
+        this.contrasenia = contrasenia;
         this.misEntradas = new ArrayList<>();
     }
 
     public boolean autenticar(String contrasenia) {
-        return this.contrasenia.equals(contrasenia); // Simple comparación, no segura para producción.
+        return this.contrasenia.equals(contrasenia);
     }
 
     public void agregarEntrada(IEntrada entrada) {
@@ -65,7 +65,7 @@ public class Usuario {
     }
 
     public List<IEntrada> getMisEntradas() {
-        return Collections.unmodifiableList(new ArrayList<>(misEntradas)); // Retorna copia inmutable
+        return Collections.unmodifiableList(new ArrayList<>(misEntradas)); 
     }
 
     @Override

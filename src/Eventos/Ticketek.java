@@ -59,10 +59,7 @@ public class Ticketek implements ITicketek {
     public void registrarSede(String nombre, String direccion, int capacidadMaxima, int asientosPorFila,
                               int cantidadPuestos, double precioConsumicion, String[] sectores, int[] capacidad,
                               int[] porcentajeAdicional) {
-        // Asumiendo que 'precioConsumicion' es el 'costoAdicional' para Miniestadio.
-        // 'cantidadPuestos' no se usa directamente en el constructor de Miniestadio según nuestra definición.
-        // Si 'cantidadPuestos' representa algo más en Miniestadio (ej. capacidad extra),
-        // el constructor de Miniestadio y su lógica deberían ser modificados.
+       
         
         if (nombre == null || nombre.isEmpty() || direccion == null || direccion.isEmpty() || capacidadMaxima <= 0)
             throw new IllegalArgumentException("Datos de miniestadio inválidos: nombre, dirección o capacidad.");
@@ -245,7 +242,7 @@ public class Ticketek implements ITicketek {
             return sb.toString();
         }
 
-        // Ordenar funciones por fecha para una salida consistente
+        
         funcionesDelEspectaculo.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
             .forEach(entry -> {
@@ -256,12 +253,11 @@ public class Ticketek implements ITicketek {
                 sb.append(sede.getNombre()).append(" - ");
 
                 if (sede instanceof Estadio) {
-                    // Formato para Estadio: "{ENTRADAS VENDIDAS} / {CAPACIDAD SEDE}"
-                    int entradasVendidas = sede.getAsientosOcupadosEnSector(funcion, "CAMPO"); // Asume "CAMPO" es el sector
+                   
+                    int entradasVendidas = sede.getAsientosOcupadosEnSector(funcion, "CAMPO"); 
                     int capacidadTotal = sede.getCapacidadTotal();
                     sb.append(entradasVendidas).append("/").append(capacidadTotal);
-                } else if (sede instanceof Teatro) { // Incluye Miniestadio
-                    // Formato para Teatro/Miniestadio: "{NOMBRE SECTOR1}: {ENTRADAS VENDIDAS 1} / {CAPACIDAD SECTOR} | ..."
+                } else if (sede instanceof Teatro) { 
                     Teatro teatro = (Teatro) sede;
                     String[] sectores = teatro.obtenerSectores();
                     for (int i = 0; i < sectores.length; i++) {
@@ -287,7 +283,7 @@ public class Ticketek implements ITicketek {
         if (espectaculo == null) {
             throw new RuntimeException("Espectáculo no encontrado.");
         }
-        // Delega al Espectaculo para obtener todas sus entradas vendidas
+       
         return espectaculo.listarEntradasVendidas();
     }
 
@@ -317,51 +313,61 @@ public class Ticketek implements ITicketek {
         Usuario usuario = usuarios.get(email);
         if (usuario == null || !usuario.autenticar(contrasenia)) throw new RuntimeException("Usuario o contraseña inválidos.");
         
-        return usuario.getMisEntradas(); // Retorna una copia inmutable desde Usuario
+        return usuario.getMisEntradas(); 
     }
+
 
     @Override
     public boolean anularEntrada(IEntrada entrada, String contrasenia) {
         if (entrada == null) throw new IllegalArgumentException("Entrada inválida (nula).");
         if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
+
         Entrada entAux = (Entrada) entrada;
         Entrada entParaAnular = entradasPorId.get(entAux.getIdEntrada());
-        if (entParaAnular == null || entParaAnular.estaAnulada()) {
-            return false; // La entrada no existe o ya está anulada
+
+       
+        if (entParaAnular == null) {
+            throw new RuntimeException("La entrada no existe."); 
         }
-        
-        // Verificar si la fecha de la entrada ya pasó
+        if (entParaAnular.estaAnulada()) {
+            throw new RuntimeException("La entrada ya ha sido anulada."); 
+        }
+      
+
+       
         if (entParaAnular.getFuncion().getFecha().isBefore(LocalDate.now())) {
-            return false; // No se puede anular una entrada de una función pasada.
+            return false;
         }
 
-        Usuario usuario = usuarios.get(entParaAnular.getEmail()); // Usar getEmail() de IEntrada
+        Usuario usuario = usuarios.get(entParaAnular.getEmail()); 
         if (usuario == null || !usuario.autenticar(contrasenia)) {
             throw new RuntimeException("Contraseña incorrecta para el usuario asociado a esta entrada.");
         }
 
-        // Marcar la entrada como anulada
+       
         entParaAnular.setAnulada(true);
 
-        // Liberar el asiento/capacidad en la Sede y Función
+      
         Sede sede = entParaAnular.getFuncion().getSede();
         Funcion funcion = entParaAnular.getFuncion();
-        
+
         if (entParaAnular.getTipo().equalsIgnoreCase("ASIENTO")) {
             sede.desmarcarAsientoOcupado(funcion, entParaAnular.getSector(), entParaAnular.getAsientos()[0]);
         } else if (entParaAnular.getTipo().equalsIgnoreCase("CAMPO")) {
-            sede.desmarcarAsientoOcupado(funcion, "CAMPO", 1); 
+            sede.desmarcarAsientoOcupado(funcion, "CAMPO", 1);
         }
-        
-        funcion.eliminarEntrada(entParaAnular); // Eliminar de la función
 
-        // Descontar de la recaudación consolidada
+       
+        funcion.eliminarEntrada(entParaAnular); 
+
+        
         double costoEntradaAnulada = entParaAnular.precio();
         String nombreEspectaculo = entParaAnular.getFuncion().getEspectaculo().getNombre();
         String nombreSede = sede.getNombre();
 
         recaudacionPorSedeYEspectaculo.computeIfPresent(nombreSede, (s, espectaculosRec) -> {
-            espectaculosRec.computeIfPresent(nombreEspectaculo, (e, recaudado) -> recaudado - costoEntradaAnulada);
+            espectaculosRec.computeIfPresent(nombreEspectaculo, (e, recaudado) ->
+                    recaudado - costoEntradaAnulada);
             return espectaculosRec;
         });
 
@@ -380,7 +386,7 @@ public class Ticketek implements ITicketek {
         Entrada entActual = entradasPorId.get(entAux.getIdEntrada());
         if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
         
-        // Verificar si la fecha de la entrada actual ya pasó
+        
         if (entActual.getFuncion().getFecha().isBefore(LocalDate.now())) {
             throw new RuntimeException("No se puede cambiar una entrada cuya función ya ha pasado.");
         }
@@ -399,12 +405,12 @@ public class Ticketek implements ITicketek {
         Funcion nuevaFuncion = espectaculo.getFuncion(nuevaFecha);
         if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + nuevaFechaStr + " del mismo espectáculo.");
         
-        // La regla indica que el cambio de fecha, sector y asiento no permite cambio de sede.
+      
         if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
             throw new RuntimeException("El cambio de función no permite cambio de sede.");
         }
         
-        // Validar que la sede de la entrada original es un Teatro (o Miniestadio)
+       
         Sede sedeOriginal = entActual.getFuncion().getSede();
         if (!(sedeOriginal instanceof Teatro)) {
             throw new RuntimeException("El tipo de sede de la entrada original no soporta cambio de sector y asiento.");
@@ -412,31 +418,29 @@ public class Ticketek implements ITicketek {
         Teatro teatroOriginal = (Teatro) sedeOriginal;
 
         try {
-            // 1. Anular la entrada antigua
+           
             boolean anulado = anularEntrada(entradaExistente, contrasenia);
             if (!anulado) {
-                // Si la anulación falla (ej. por fecha pasada, aunque ya chequeamos), lanzar error
+               
                 throw new RuntimeException("Fallo al anular la entrada original para el cambio.");
             }
 
-            // 2. Vender la nueva entrada en el nuevo sector/asiento de la nueva función
+           
             Entrada nuevaEntrada = teatroOriginal.venderEntrada(nuevaFuncion, usuario, nuevoSector, nuevoAsiento);
 
-            // 3. Registrar la nueva entrada en los mapas de Ticketek
+          
             entradasPorId.put(nuevaEntrada.getIdEntrada(), nuevaEntrada);
             usuario.agregarEntrada(nuevaEntrada);
             nuevaFuncion.agregarEntrada(nuevaEntrada); 
 
-            // 4. Actualizar la recaudación (la anulación ya descontó, ahora sumamos la nueva)
+           
             recaudacionPorSedeYEspectaculo.computeIfAbsent(sedeOriginal.getNombre(), k -> new HashMap<>())
                                           .merge(espectaculo.getNombre(), nuevaEntrada.precio(), Double::sum);
 
             return nuevaEntrada;
 
         } catch (RuntimeException e) {
-            // Es crucial que aquí se manejen los errores de manera que el sistema no quede en un estado inconsistente.
-            // Si la nueva venta falla después de la anulación, la entrada original sigue anulada.
-            // Para un sistema robusto, se debería considerar una transacción (try-catch-finally con rollback).
+            
             throw new RuntimeException("Error al cambiar la entrada de fecha, sector y asiento: " + e.getMessage());
         }
     }
@@ -451,7 +455,7 @@ public class Ticketek implements ITicketek {
         Entrada entActual = entradasPorId.get(entAux.getIdEntrada());
         if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
         
-        // Verificar si la fecha de la entrada actual ya pasó
+      
         if (entActual.getFuncion().getFecha().isBefore(LocalDate.now())) {
             throw new RuntimeException("No se puede cambiar una entrada cuya función ya ha pasado.");
         }
@@ -470,7 +474,7 @@ public class Ticketek implements ITicketek {
         Funcion nuevaFuncion = espectaculo.getFuncion(nuevaFecha);
         if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + nuevaFechaStr + " del mismo espectáculo.");
         
-        // La regla indica que el cambio de fecha no permite cambio de sede.
+        
         if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
             throw new RuntimeException("El cambio de función a otra fecha no permite cambio de sede.");
         }
@@ -481,13 +485,13 @@ public class Ticketek implements ITicketek {
         int[] asientosOriginales = entActual.getAsientos();
 
         try {
-            // 1. Anular la entrada antigua
+           
             boolean anulado = anularEntrada(entradaExistente, contrasenia);
             if (!anulado) {
                 throw new RuntimeException("Fallo al anular la entrada original para el cambio.");
             }
 
-            // 2. Crear y vender la nueva entrada, manteniendo el tipo de asiento/campo
+           
             Entrada nuevaEntrada;
             if (tipoEntrada.equalsIgnoreCase("CAMPO")) {
                 if (!(sedeOriginal instanceof Estadio)) throw new RuntimeException("Inconsistencia: entrada de CAMPO en sede no Estadio.");
@@ -500,12 +504,12 @@ public class Ticketek implements ITicketek {
                 throw new RuntimeException("Tipo de entrada desconocido: " + tipoEntrada);
             }
 
-            // 3. Registrar la nueva entrada en los mapas de Ticketek
+           
             entradasPorId.put(nuevaEntrada.getIdEntrada(), nuevaEntrada);
             usuario.agregarEntrada(nuevaEntrada);
             nuevaFuncion.agregarEntrada(nuevaEntrada); 
             
-            // 4. Actualizar la recaudación (la anulación ya descontó, ahora sumamos la nueva)
+          
             recaudacionPorSedeYEspectaculo.computeIfAbsent(sedeOriginal.getNombre(), k -> new HashMap<>())
                                           .merge(espectaculo.getNombre(), nuevaEntrada.precio(), Double::sum);
 
@@ -539,7 +543,7 @@ public class Ticketek implements ITicketek {
              throw new RuntimeException("Este método es solo para estadios. Para sedes con sectores, use el método con 'sector'.");
         }
 
-        // En estadios, el "precio de la entrada" es el precio base de la función
+       
         return funcion.getPrecioBase();
     }
 
@@ -563,11 +567,11 @@ public class Ticketek implements ITicketek {
         if (funcion == null) throw new RuntimeException("Función no encontrada para la fecha especificada.");
 
         Sede sede = funcion.getSede();
-        if (!(sede instanceof Teatro)) { // Miniestadio hereda de Teatro
+        if (!(sede instanceof Teatro)) {
             throw new RuntimeException("Este método es solo para sedes con asientos y sectores (Teatros o Miniestadios).");
         }
         
-        // Llama al método de la sede para obtener el precio específico del sector.
+       
         return sede.obtenerPrecioBase(funcion, sector);
     }
     
@@ -578,7 +582,7 @@ public class Ticketek implements ITicketek {
         Espectaculo espectaculo = espectaculos.get(nombreEspectaculo);
         if (espectaculo == null) throw new RuntimeException("Espectáculo no encontrado.");
         
-        // Delega a la clase Espectaculo que ya tiene la lógica de sumar la recaudación de todas sus funciones
+        
         return espectaculo.calcularRecaudacionTotal();
     }
     
@@ -589,10 +593,10 @@ public class Ticketek implements ITicketek {
 
         Map<String, Double> recaudacionEspectaculosEnSede = recaudacionPorSedeYEspectaculo.get(nombreSede);
         if (recaudacionEspectaculosEnSede == null) {
-            return 0.0; // Si la sede no tiene recaudación registrada para ningún espectáculo
+            return 0.0; 
         }
 
-        // Acceso O(1) al valor precalculado
+     
         return recaudacionEspectaculosEnSede.getOrDefault(nombreEspectaculo, 0.0);
     }
 
