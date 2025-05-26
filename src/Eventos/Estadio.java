@@ -1,47 +1,65 @@
 // Eventos/Estadio.java
 package Eventos;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 public class Estadio extends Sede {
-    // Estadio implicitly has a single "CAMPO" sector.
     private final String CAMPO_SECTOR_NAME = "CAMPO";
+
+    // Cantidad total de entradas vendidas por función
+    private Map<Funcion, Integer> cantidadVendidaPorFuncion = new HashMap<>();
+
+    // Contador para asignar número único de entrada por función
+    private Map<Funcion, Integer> numeroEntradaPorFuncion = new HashMap<>();
 
     public Estadio(String nombre, String direccion, int capacidadTotal) {
         super(nombre, direccion, capacidadTotal);
-        this.asientosPorFila = 0; // Not applicable for stadium's CAMPO
+        this.asientosPorFila = 0; // no aplica para campo
     }
 
     @Override
     public double obtenerPrecioBase(Funcion funcion, String sector) {
         if (!CAMPO_SECTOR_NAME.equals(sector)) {
-            throw new RuntimeException("Solo se puede vender en el sector '" + CAMPO_SECTOR_NAME + "' para este Estadio.");
+            throw new RuntimeException("Solo se puede vender en el sector 'CAMPO' para este Estadio.");
         }
-        return funcion.getPrecioBase(); // No increment for CAMPO
+        return funcion.getPrecioBase(); // precio base directo
     }
 
-    @Override
-    public Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int cantidad) {
+    public List<Entrada> venderEntrada(Funcion funcion, Usuario usuario, String sector, int cantidad) {
         if (funcion == null) throw new IllegalArgumentException("Función no puede ser nula.");
         if (usuario == null) throw new IllegalArgumentException("Usuario no puede ser nulo.");
         if (!CAMPO_SECTOR_NAME.equals(sector)) throw new IllegalArgumentException("Sector inválido para Estadio. Debe ser 'CAMPO'.");
-        if (cantidad <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida.");        
-        	int ticketsVendidosCampo = getAsientosOcupadosEnSector(funcion, CAMPO_SECTOR_NAME);
-        	if (ticketsVendidosCampo + cantidad > this.capacidadTotal) {
-        		throw new RuntimeException("Se excede la capacidad del sector CAMPO en este Estadio. Capacidad restante: " + (this.capacidadTotal - ticketsVendidosCampo));
-        }
-        for (int i = 0; i < cantidad; i++) {
-            int dummySeatNumber = ticketsVendidosCampo + i + 1;
-            marcarAsientoOcupado(funcion, CAMPO_SECTOR_NAME, dummySeatNumber);
+        if (cantidad <= 0) throw new IllegalArgumentException("Cantidad de entradas inválida.");
+
+        int vendidas = getEntradasVendidas(funcion);
+        if (vendidas + cantidad > capacidadTotal) {
+            throw new RuntimeException("Se excede la capacidad del estadio. Capacidad restante: " + (capacidadTotal - vendidas));
         }
 
-        return new Entrada(funcion, usuario, CAMPO_SECTOR_NAME, 1);
+        incrementarEntradasVendidas(funcion, cantidad);
+
+        List<Entrada> entradas = new ArrayList<>();
+        for (int i = 0; i < cantidad; i++) {
+            int numero = obtenerSiguienteNumeroEntrada(funcion);
+            entradas.add(new Entrada(funcion, usuario, CAMPO_SECTOR_NAME, numero));
+        }
+        return entradas;
     }
-    
-   
+
+    private int getEntradasVendidas(Funcion funcion) {
+        return cantidadVendidaPorFuncion.getOrDefault(funcion, 0);
+    }
+
+    private void incrementarEntradasVendidas(Funcion funcion, int cantidad) {
+        cantidadVendidaPorFuncion.put(funcion, getEntradasVendidas(funcion) + cantidad);
+    }
+
+    private int obtenerSiguienteNumeroEntrada(Funcion funcion) {
+        int actual = numeroEntradaPorFuncion.getOrDefault(funcion, 0);
+        numeroEntradaPorFuncion.put(funcion, actual + 1);
+        return actual + 1;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(super.toString());

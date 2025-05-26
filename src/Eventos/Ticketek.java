@@ -155,17 +155,21 @@ public class Ticketek implements ITicketek {
         try {
             for (int i = 0; i < cantidadEntradas; i++) {
                 // Estadio vende entradas de tipo "CAMPO"
-                Entrada entrada = estadio.venderEntrada(funcion, usuario, "CAMPO", 1); // 1 unidad de capacidad
-                nuevasEntradas.add(entrada);
+                List<Entrada> entradas = estadio.venderEntrada(funcion, usuario, "CAMPO", 1); // 1 unidad de capacidad
                 
-                // Registrar la entrada en los mapas de Ticketek
-                entradasPorId.put(entrada.getIdEntrada(), entrada);
-                usuario.agregarEntrada(entrada);
-                funcion.agregarEntrada(entrada); // Agregar entrada a la función
                 
-                // Actualizar la recaudación
-                recaudacionPorSedeYEspectaculo.computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
-                                              .merge(nombreEspectaculo, entrada.precio(), Double::sum);
+                for (Entrada entrada :entradas) {
+                	nuevasEntradas.add(entrada);
+                    // Registrar la entrada en los mapas de Ticketek
+                    entradasPorId.put(entrada.getIdEntrada(), entrada);
+                    usuario.agregarEntrada(entrada);
+                    funcion.agregarEntrada(entrada); // Agregar entrada a la función
+
+                    // Actualizar la recaudación
+                    recaudacionPorSedeYEspectaculo
+                        .computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
+                        .merge(nombreEspectaculo, entrada.precio(), Double::sum);
+                }
             }
             return nuevasEntradas;
         } catch (RuntimeException e) {
@@ -322,8 +326,8 @@ public class Ticketek implements ITicketek {
     public boolean anularEntrada(IEntrada entrada, String contrasenia) {
         if (entrada == null) throw new IllegalArgumentException("Entrada inválida (nula).");
         if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
-
-        Entrada entParaAnular = entradasPorId.get(entrada.getIdEntrada());
+        Entrada entAux = (Entrada) entrada;
+        Entrada entParaAnular = entradasPorId.get(entAux.getIdEntrada());
         if (entParaAnular == null || entParaAnular.estaAnulada()) {
             return false; // La entrada no existe o ya está anulada
         }
@@ -373,8 +377,9 @@ public class Ticketek implements ITicketek {
         if (nuevaFechaStr == null || nuevaFechaStr.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida.");
         if (nuevoSector == null || nuevoSector.isEmpty()) throw new IllegalArgumentException("Nuevo sector inválido.");
         if (nuevoAsiento <= 0) throw new IllegalArgumentException("Nuevo asiento inválido.");
-
-        Entrada entActual = entradasPorId.get(entradaExistente.getIdEntrada());
+        
+        Entrada entAux = (Entrada) entradaExistente;
+        Entrada entActual = entradasPorId.get(entAux.getIdEntrada());
         if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
         
         // Verificar si la fecha de la entrada actual ya pasó
@@ -443,8 +448,9 @@ public class Ticketek implements ITicketek {
         if (entradaExistente == null) throw new IllegalArgumentException("Entrada inválida (nula).");
         if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
         if (nuevaFechaStr == null || nuevaFechaStr.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida.");
-
-        Entrada entActual = entradasPorId.get(entradaExistente.getIdEntrada());
+        
+        Entrada entAux = (Entrada) entradaExistente;
+        Entrada entActual = entradasPorId.get(entAux.getIdEntrada());
         if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
         
         // Verificar si la fecha de la entrada actual ya pasó

@@ -146,14 +146,12 @@ public class Entrada implements IEntrada {
         this.usada = fueUsada;
     }
     
-    // --- Métodos Adicionales (no en la interfaz, pero útiles) ---
+    // --- Métodos Adicionales---
 
     // Este getter es necesario para la clase Ticketek en anularEntrada/cambiarEntrada
     public String getIdEntrada() {
         return idEntrada;
     }
-    
-    // Este getter es necesario para la clase Ticketek en anularEntrada/cambiarEntrada
     public Usuario getUsuario() {
         return usuario;
     }

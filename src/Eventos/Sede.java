@@ -4,6 +4,7 @@ package Eventos;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,7 +26,7 @@ public abstract class Sede {
 
     // Abstract methods to be implemented by concrete Sede types
     public abstract double obtenerPrecioBase(Funcion funcion, String sector);
-    public abstract Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int valorAsientoOCantidad);
+    public abstract List<Entrada> venderEntrada(Funcion funcion, Usuario usuario, String sector, int valorAsientoOCantidad);
     
     // Getters for common properties
     public String getNombre() { return nombre; }
