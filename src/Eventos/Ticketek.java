@@ -155,10 +155,8 @@ public class Ticketek implements ITicketek {
         try {
             for (int i = 0; i < cantidadEntradas; i++) {
                 // Estadio vende entradas de tipo "CAMPO"
-                List<Entrada> entradas = estadio.venderEntrada(funcion, usuario, "CAMPO", 1); // 1 unidad de capacidad
+                Entrada entrada = estadio.venderEntrada(funcion, usuario, "CAMPO", 1); // 1 unidad de capacidad
                 
-                
-                for (Entrada entrada :entradas) {
                 	nuevasEntradas.add(entrada);
                     // Registrar la entrada en los mapas de Ticketek
                     entradasPorId.put(entrada.getIdEntrada(), entrada);
@@ -169,7 +167,7 @@ public class Ticketek implements ITicketek {
                     recaudacionPorSedeYEspectaculo
                         .computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
                         .merge(nombreEspectaculo, entrada.precio(), Double::sum);
-                }
+                
             }
             return nuevasEntradas;
         } catch (RuntimeException e) {

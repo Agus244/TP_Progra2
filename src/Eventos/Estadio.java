@@ -1,4 +1,3 @@
-// Eventos/Estadio.java
 package Eventos;
 
 import java.util.*;
@@ -25,7 +24,7 @@ public class Estadio extends Sede {
         return funcion.getPrecioBase(); // precio base directo
     }
 
-    public List<Entrada> venderEntrada(Funcion funcion, Usuario usuario, String sector, int cantidad) {
+    public Entrada venderEntrada(Funcion funcion, Usuario usuario, String sector, int cantidad) {
         if (funcion == null) throw new IllegalArgumentException("Función no puede ser nula.");
         if (usuario == null) throw new IllegalArgumentException("Usuario no puede ser nulo.");
         if (!CAMPO_SECTOR_NAME.equals(sector)) throw new IllegalArgumentException("Sector inválido para Estadio. Debe ser 'CAMPO'.");
@@ -38,11 +37,7 @@ public class Estadio extends Sede {
 
         incrementarEntradasVendidas(funcion, cantidad);
 
-        List<Entrada> entradas = new ArrayList<>();
-        for (int i = 0; i < cantidad; i++) {
-            int numero = obtenerSiguienteNumeroEntrada(funcion);
-            entradas.add(new Entrada(funcion, usuario, CAMPO_SECTOR_NAME, numero));
-        }
+        Entrada entradas = new Entrada(funcion, usuario, CAMPO_SECTOR_NAME, obtenerSiguienteNumeroEntrada(funcion));
         return entradas;
     }
 

@@ -3,9 +3,7 @@ package Eventos;
 
 import org.junit.*;
 import org.junit.runners.MethodSorters;
-
-import junit.framework.Test;
-
+import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.util.LinkedList;

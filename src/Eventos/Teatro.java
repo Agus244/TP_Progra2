@@ -1,4 +1,3 @@
-// Eventos/Teatro.java
 package Eventos;
 
 import java.util.HashSet;
@@ -13,13 +12,13 @@ public class Teatro extends Sede {
 
     public Teatro(String nombre, String direccion, int capacidadTotal, int asientosPorFila, String[] sectores, int[] capacidadPorSector, int[] porcentajeIncremento) {
         super(nombre, direccion, capacidadTotal);
-        this.asientosPorFila = asientosPorFila; // Initialize the inherited field
+        this.asientosPorFila = asientosPorFila; 
         this.sectores = sectores;
         this.capacidadPorSector = capacidadPorSector;
         this.porcentajeIncremento = porcentajeIncremento;
     }
 
-    // New method: obtenerCapacidadPorSector
+    
     public int obtenerCapacidadPorSector(String sector) {
         for (int i = 0; i < sectores.length; i++) {
             if (sectores[i].equals(sector)) {
@@ -29,12 +28,12 @@ public class Teatro extends Sede {
         throw new RuntimeException("Sector '" + sector + "' no encontrado en el teatro " + nombre);
     }
 
-    // New method: obtenerSectores
+   
     public String[] obtenerSectores() {
         return sectores;
     }
 
-    // New method: obtenerPorcentajeIncremento
+   
     public int obtenerPorcentajeIncremento(String sector) {
         for (int i = 0; i < sectores.length; i++) {
             if (sectores[i].equals(sector)) {
@@ -61,7 +60,7 @@ public class Teatro extends Sede {
         if (sector == null || sector.isEmpty()) throw new IllegalArgumentException("Sector inválido.");
         if (asiento <= 0) throw new IllegalArgumentException("Número de asiento inválido.");
 
-        // Check if the sector exists in this theater
+      
         int capacidadMaximaSector = 0;
         boolean sectorEncontrado = false;
         for (int i = 0; i < sectores.length; i++) {
@@ -76,26 +75,25 @@ public class Teatro extends Sede {
             throw new RuntimeException("El sector '" + sector + "' no existe en este teatro.");
         }
 
-        // Check if the seat is already occupied for this function and sector
+       
         if (estaAsientoOcupado(funcion, sector, asiento)) {
             throw new RuntimeException("El asiento " + asiento + " en el sector " + sector + " ya está ocupado para esta función.");
         }
         
-        // Check if sector capacity is exceeded
+       
         if (getAsientosOcupadosEnSector(funcion, sector) >= capacidadMaximaSector) {
             throw new RuntimeException("El sector " + sector + " ha alcanzado su capacidad máxima.");
         }
 
-        // Mark the seat as occupied
         marcarAsientoOcupado(funcion, sector, asiento);
 
-        // Create and return the ticket
+       
         return new Entrada(funcion, usuario, sector, asiento);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(super.toString()); // Use super.toString() for common info
+        StringBuilder sb = new StringBuilder(super.toString()); 
         sb.append(" | Tipo: Teatro")
           .append(" | Asientos por fila: ").append(asientosPorFila)
           .append(" | Sectores: ");
