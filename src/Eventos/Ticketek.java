@@ -406,9 +406,9 @@ public class Ticketek implements ITicketek {
         if (nuevaFuncion == null) throw new RuntimeException("Nueva función no encontrada para la fecha " + nuevaFechaStr + " del mismo espectáculo.");
         
       
-        if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
+        /*if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
             throw new RuntimeException("El cambio de función no permite cambio de sede.");
-        }
+        }*/
         
        
         Sede sedeOriginal = entActual.getFuncion().getSede();
@@ -447,6 +447,79 @@ public class Ticketek implements ITicketek {
 
     @Override
     public IEntrada cambiarEntrada(IEntrada entradaExistente, String contrasenia, String nuevaFechaStr) {
+        // Validaciones iniciales
+        if (entradaExistente == null) throw new IllegalArgumentException("Entrada inválida (nula).");
+        if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
+        if (nuevaFechaStr == null || nuevaFechaStr.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida.");
+        
+        Entrada entActual = entradasPorId.get(((Entrada)entradaExistente).getIdEntrada());
+        if (entActual == null || entActual.estaAnulada()) throw new RuntimeException("Entrada no encontrada o ya anulada.");
+        
+        if (entActual.getFuncion().getFecha().isBefore(LocalDate.now())) {
+            throw new RuntimeException("No se puede cambiar una entrada cuya función ya ha pasado.");
+        }
+
+        // Autenticación
+        Usuario usuario = usuarios.get(entActual.getEmail());
+        if (usuario == null || !usuario.autenticar(contrasenia)) {
+            throw new RuntimeException("Contraseña incorrecta para el usuario de la entrada.");
+        }
+
+        // Procesamiento de nueva fecha
+        LocalDate nuevaFecha;
+        try {
+            nuevaFecha = LocalDate.parse(nuevaFechaStr, DATE_FORMATTER);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Formato de nueva fecha inválido. Use dd/mm/YY.");
+        }
+
+        // Validación de nueva función
+        Espectaculo espectaculo = entActual.getFuncion().getEspectaculo();
+        Funcion nuevaFuncion = espectaculo.getFuncion(nuevaFecha);
+        if (nuevaFuncion == null) {
+            throw new RuntimeException("Nueva función no encontrada para la fecha " + nuevaFechaStr + " del mismo espectáculo.");
+        }
+        
+        if (!nuevaFuncion.getSede().getNombre().equals(entActual.getFuncion().getSede().getNombre())) {
+            throw new RuntimeException("El cambio de función a otra fecha no permite cambio de sede.");
+        }
+
+        // Anulación de entrada original
+        if (!anularEntrada(entradaExistente, contrasenia)) {
+            throw new RuntimeException("Fallo al anular la entrada original para el cambio.");
+        }
+
+        // Creación de nueva entrada
+        Sede sede = nuevaFuncion.getSede();
+        String tipoEntrada = entActual.getTipo();
+        String sector = entActual.getSector();
+        int[] asientos = entActual.getAsientos();
+
+        Entrada nuevaEntrada;
+        if (tipoEntrada.equalsIgnoreCase("CAMPO")) {
+            nuevaEntrada = sede.venderEntrada(nuevaFuncion, usuario, sector, 1);
+        } else if (tipoEntrada.equalsIgnoreCase("ASIENTO")) {
+            if (asientos == null || asientos.length == 0) {
+                throw new RuntimeException("Asiento original inválido para cambio de fecha.");
+            }
+            nuevaEntrada = sede.venderEntrada(nuevaFuncion, usuario, sector, asientos[0]);
+        } else {
+            throw new RuntimeException("Tipo de entrada desconocido: " + tipoEntrada);
+        }
+
+        // Actualización de registros
+        entradasPorId.put(nuevaEntrada.getIdEntrada(), nuevaEntrada);
+        usuario.agregarEntrada(nuevaEntrada);
+        nuevaFuncion.agregarEntrada(nuevaEntrada);
+        
+        // Actualización de recaudación
+        recaudacionPorSedeYEspectaculo
+            .computeIfAbsent(sede.getNombre(), k -> new HashMap<>())
+            .merge(espectaculo.getNombre(), nuevaEntrada.precio(), Double::sum);
+
+        return nuevaEntrada;
+    }
+    /*public IEntrada cambiarEntrada(IEntrada entradaExistente, String contrasenia, String nuevaFechaStr) {
         if (entradaExistente == null) throw new IllegalArgumentException("Entrada inválida (nula).");
         if (contrasenia == null || contrasenia.isEmpty()) throw new IllegalArgumentException("Contraseña inválida.");
         if (nuevaFechaStr == null || nuevaFechaStr.isEmpty()) throw new IllegalArgumentException("Nueva fecha inválida.");
@@ -519,7 +592,7 @@ public class Ticketek implements ITicketek {
             throw new RuntimeException("Error al cambiar la entrada de fecha: " + e.getMessage());
         }
     }
-
+*/
     @Override
     public double costoEntrada(String nombreEspectaculo, String fechaStr) {
         if (nombreEspectaculo == null || nombreEspectaculo.isEmpty()) throw new IllegalArgumentException("Nombre de espectáculo inválido.");
