@@ -79,6 +79,34 @@ public class Entrada implements IEntrada {
 
     @Override
     public String toString() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy");
+        
+        String base = String.format("%s - %s - %s - %s",
+            funcion.getEspectaculo().getNombre(),
+            funcion.getFecha().format(formatter),
+            funcion.getSede().getNombre(),
+            ubicacion());
+
+        if (funcion.getFecha().isBefore(LocalDate.now())) {
+            return " P - " + base;  // Para entradas pasadas (segundo test)
+        }
+        return "- " + base;  // Para entradas futuras (primer test)
+    }
+    
+    /*public String toString() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy");
+        
+        String base = String.format("%s - %s - %s - %s",
+            funcion.getEspectaculo().getNombre(),
+            funcion.getFecha().format(formatter),
+            funcion.getSede().getNombre(),
+            ubicacion());
+
+        return funcion.getFecha().isBefore(LocalDate.now()) 
+            ? " P - " + base 
+            : base;
+    }*/
+    /*public String toString() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         String estado = "";
 
@@ -93,7 +121,7 @@ public class Entrada implements IEntrada {
                 funcion.getEspectaculo().getNombre(),
                 funcion.getSede().getNombre(),
                 ubicacion());
-    }
+    }*/
 
     @Override
     public Funcion getFuncion() {
